@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>day–guard retail crm</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;font-size:14px;color:#1a1a1a}
+.topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+.brand{font-size:14px;font-weight:500}.brand em{color:#1D9E75;font-style:normal}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block;margin-left:6px;vertical-align:middle}
+.sync-dot.ok{background:#1D9E75}.sync-dot.err{background:#E24B4A}
+.nav{display:flex;gap:3px}
+.nb{padding:5px 11px;font-size:12px;border-radius:8px;border:0.5px solid transparent;cursor:pointer;background:transparent;color:#666;font-family:inherit}
+.nb.on{background:#f0f0ee;border-color:rgba(0,0,0,0.1);color:#1a1a1a;font-weight:500}
+.nb:hover:not(.on){background:#f0f0ee}
+.add-btn{padding:6px 14px;font-size:13px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500}
+.add-btn:hover{opacity:.87}
+.content{padding:14px 18px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.mcard{background:#ebebea;border-radius:8px;padding:11px 13px}
+.mcard.warn{background:#FCEBEB}.mcard.amber{background:#FAEEDA}
+.mcard.clickable{cursor:pointer}.mcard.clickable:hover{opacity:.85}
+.mlabel{font-size:11px;color:#666;margin-bottom:3px}
+.mval{font-size:21px;font-weight:500;color:#1a1a1a}
+.mcard.warn .mval{color:#A32D2D}.mcard.amber .mval{color:#633806}
+.msub{font-size:11px;color:#666;margin-top:2px}
+.filters{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap}
+.filters select,.filters input{font-size:12px;padding:5px 9px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;color:#1a1a1a;font-family:inherit;height:30px}
+.filters input{flex:1;min-width:120px}
+.tw{background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,0.1);overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+thead th{padding:8px 11px;font-size:11px;font-weight:500;color:#666;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.1);background:#f8f8f7;white-space:nowrap}
+tbody tr{border-bottom:0.5px solid rgba(0,0,0,0.08);cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8f8f7}
+tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:500}
+.s-contacted{background:#E1F5EE;color:#0F6E56}
+.s-sampled{background:#FAEEDA;color:#633806}
+.s-active{background:#E6F1FB;color:#0C447C}
+.s-reordering{background:#EAF3DE;color:#27500A}
+.s-dead{background:#F1EFE8;color:#5F5E5A}
+.flag-low{background:#FAEEDA;color:#633806}
+.flag-pay{background:#FCEBEB;color:#791F1F}
+.flag-od{background:#FCEBEB;color:#791F1F}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.38);align-items:flex-start;justify-content:center;padding:20px;z-index:100;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,0.1);width:100%;max-width:520px;margin:auto}
+.mh{padding:12px 15px;border-bottom:0.5px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center}
+.mh h2{font-size:14px;font-weight:500}
+.xbtn{background:none;border:none;cursor:pointer;font-size:20px;color:#999;padding:0 4px;line-height:1}
+.mb{padding:14px 15px;max-height:75vh;overflow-y:auto}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.ff{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:11px;color:#666;font-weight:500}
+.f input,.f select,.f textarea{font-size:12px;padding:6px 9px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;color:#1a1a1a;font-family:inherit;width:100%}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:#1D9E75}
+.f textarea{resize:vertical;min-height:50px}
+.sec-label{font-size:10px;font-weight:500;color:#999;letter-spacing:.05em;text-transform:uppercase;grid-column:1/-1;margin-top:4px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08)}
+.mf{padding:11px 15px;border-top:0.5px solid rgba(0,0,0,0.1);display:flex;justify-content:flex-end;gap:8px}
+.btn-s{padding:6px 13px;font-size:12px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.2);cursor:pointer;background:transparent;color:#1a1a1a;font-family:inherit}
+.btn-p{padding:6px 13px;font-size:12px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500}
+.btn-p:hover{opacity:.87}
+.dtabs{display:flex;border-bottom:0.5px solid rgba(0,0,0,0.1);margin-bottom:12px}
+.dtab{padding:7px 13px;font-size:12px;cursor:pointer;border:none;border-bottom:2px solid transparent;color:#666;background:none;font-family:inherit}
+.dtab.on{color:#1D9E75;border-bottom-color:#1D9E75;font-weight:500}
+.ci-item{padding:10px 12px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.1);margin-bottom:7px}
+.ci-date{font-size:11px;color:#666;margin-bottom:5px}
+.ci-note{font-size:12px;margin-bottom:6px}
+.ci-row{display:flex;flex-wrap:wrap;gap:5px}
+.pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#f0f0ee;color:#666}
+.pill.low{background:#FAEEDA;color:#633806}
+.pill.reorder{background:#E1F5EE;color:#0F6E56}
+.pill.pay{background:#EAF3DE;color:#27500A}
+.pill.nopay{background:#FCEBEB;color:#791F1F}
+.empty-s{text-align:center;padding:28px;color:#999;font-size:12px}
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.kcol{background:#ebebea;border-radius:12px;padding:9px}
+.kch{font-size:11px;font-weight:500;color:#666;margin-bottom:7px;display:flex;justify-content:space-between}
+.kcard{background:#fff;border-radius:8px;border:0.5px solid rgba(0,0,0,0.1);padding:9px;margin-bottom:5px;cursor:pointer}
+.kcard:hover{border-color:rgba(0,0,0,0.25)}
+.kn{font-size:12px;font-weight:500;margin-bottom:2px}
+.ks{font-size:11px;color:#666}
+.ig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ic{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:13px}
+.ic h3{font-size:11px;font-weight:500;color:#666;margin-bottom:9px;text-transform:uppercase;letter-spacing:.04em}
+.ir{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.ir:last-child{border-bottom:none}
+.ir-l{font-size:12px;color:#666}
+.ir-v{font-size:12px;font-weight:500}
+.pay-table{width:100%;border-collapse:collapse}
+.pay-table th{font-size:11px;font-weight:500;color:#666;text-align:left;padding:7px 10px;border-bottom:0.5px solid rgba(0,0,0,0.1);background:#f8f8f7}
+.pay-table td{font-size:12px;padding:8px 10px;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.pay-table tr:last-child td{border-bottom:none}
+.pay-table tr{cursor:pointer}.pay-table tr:hover td{background:#f8f8f7}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.info-item .il{font-size:11px;color:#666;margin-bottom:2px}
+.info-item .iv{font-size:12px}
+.low-notice{background:#FAEEDA;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:#633806}
+.pay-notice{background:#FCEBEB;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:#791F1F}
+.loading{text-align:center;padding:40px;color:#999;font-size:13px}
+@media(max-width:600px){
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .kanban{grid-template-columns:repeat(2,1fr)}
+  .ig{grid-template-columns:1fr}
+  .topbar{gap:8px}
+  .nav .nb{padding:5px 8px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><em>day–guard</em> retail crm <span class="sync-dot" id="sync-dot"></span></div>
+  <div class="nav">
+    <button class="nb on" onclick="showView('accounts')">Accounts</button>
+    <button class="nb" onclick="showView('kanban')">Pipeline</button>
+    <button class="nb" onclick="showView('payments')">Payments</button>
+    <button class="nb" onclick="showView('insights')">Insights</button>
+  </div>
+  <button class="add-btn" onclick="openAdd()">+ Add account</button>
+</div>
+
+<div class="content">
+  <div class="metrics" id="metrics"></div>
+
+  <div id="v-accounts">
+    <div class="filters">
+      <input type="text" id="srch" placeholder="Search by store name..." oninput="renderTable()">
+      <select id="fSt" onchange="renderTable()"><option value="">All statuses</option><option>Contacted</option><option>Sampled</option><option>Active</option><option>Reordering</option><option>Dead</option></select>
+      <select id="fTy" onchange="renderTable()"><option value="">All types</option><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select>
+      <select id="fRg" onchange="renderTable()"><option value="">All regions</option><option>NYC</option><option>Boston</option><option>Providence</option><option>New Jersey</option></select>
+      <select id="fRp" onchange="renderTable()"><option value="">All reps</option><option>Wyatt</option><option>Kaedin</option></select>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Store</th><th>Type</th><th>Region</th><th>Status</th><th>Rep</th><th>Boxes left</th><th>Last check-in</th><th>Alert</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <div id="v-kanban" style="display:none"><div class="kanban" id="kboard"></div></div>
+
+  <div id="v-payments" style="display:none">
+    <div class="tw"><table class="pay-table">
+      <thead><tr><th>Store</th><th>Region</th><th>Rep</th><th>Cartons</th><th>Boxes</th><th>Payment</th><th>Method</th><th>Date</th></tr></thead>
+      <tbody id="pay-tbody"></tbody>
+    </table></div>
+  </div>
+
+  <div id="v-insights" style="display:none"><div class="ig" id="igrid"></div></div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-bg" id="m-add">
+  <div class="modal">
+    <div class="mh"><h2 id="m-add-title">Add account</h2><button class="xbtn" onclick="closeM('m-add')">×</button></div>
+    <div class="mb"><div class="fg">
+      <div class="f ff"><label>Store name *</label><input id="a-name" placeholder="e.g. Murphy's Bar"></div>
+      <div class="f"><label>Store type</label>
+        <select id="a-type"><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select>
+      </div>
+      <div class="f"><label>Status</label>
+        <select id="a-status"><option>Contacted</option><option>Sampled</option><option>Active</option><option>Reordering</option><option>Dead</option></select>
+      </div>
+      <div class="sec-label">Address</div>
+      <div class="f ff"><label>Street address</label><input id="a-street" placeholder="123 Main St"></div>
+      <div class="f"><label>City</label><input id="a-city" placeholder="New York"></div>
+      <div class="f"><label>State</label><input id="a-state" placeholder="NY" maxlength="2"></div>
+      <div class="f"><label>Zip code</label><input id="a-zip" placeholder="10001" maxlength="10"></div>
+      <div class="f"><label>Region</label>
+        <select id="a-region"><option>NYC</option><option>Boston</option><option>Providence</option><option>New Jersey</option></select>
+      </div>
+      <div class="sec-label">Product</div>
+      <div class="f ff"><label>Placement in store</label>
+        <select id="a-placement"><option value="">Not placed yet</option><option>Backbar</option><option>Counter Display</option><option>Eye Level Shelf</option><option>Lower Shelf</option><option>Cooler / Fridge</option><option>Other</option></select>
+      </div>
+      <div class="f"><label>Initial boxes placed</label><input id="a-boxes" type="number" placeholder="0" min="0"></div>
+      <div class="sec-label">Contact</div>
+      <div class="f"><label>Contact name</label><input id="a-contact" placeholder="Manager name"></div>
+      <div class="f"><label>Phone</label><input id="a-phone" placeholder="(212) 555-0100"></div>
+      <div class="f"><label>Assigned rep</label><select id="a-rep"><option>Wyatt</option><option>Kaedin</option></select></div>
+      <div class="f"><label>Date first contacted</label><input id="a-date" type="date"></div>
+      <div class="f ff"><label>Notes</label><textarea id="a-notes" placeholder="Anything relevant..."></textarea></div>
+    </div></div>
+    <div class="mf">
+      <button class="btn-s" onclick="closeM('m-add')">Cancel</button>
+      <button class="btn-p" onclick="saveAccount()">Save account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-bg" id="m-detail">
+  <div class="modal" style="max-width:560px">
+    <div class="mh">
+      <h2 id="d-name">Account</h2>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="btn-s" style="font-size:11px;padding:3px 9px" onclick="startEdit()">Edit</button>
+        <button class="xbtn" onclick="closeM('m-detail')">×</button>
+      </div>
+    </div>
+    <div class="mb" id="d-body"></div>
+  </div>
+</div>
+
+<!-- Check-in Modal -->
+<div class="modal-bg" id="m-ci">
+  <div class="modal" style="max-width:400px">
+    <div class="mh"><h2>Log check-in</h2><button class="xbtn" onclick="closeM('m-ci')">×</button></div>
+    <div class="mb"><div class="fg">
+      <div class="f ff"><label>How did you reach out?</label>
+        <select id="ci-method"><option>In person</option><option>Phone call</option><option>Text</option><option>Email</option></select>
+      </div>
+      <div class="f ff"><label>Boxes remaining in store</label><input id="ci-boxes" type="number" placeholder="e.g. 8" min="0"></div>
+      <div class="f ff"><label>Product placement</label>
+        <select id="ci-placement"><option value="">No change</option><option>Backbar</option><option>Counter Display</option><option>Eye Level Shelf</option><option>Lower Shelf</option><option>Cooler / Fridge</option><option>Other</option></select>
+      </div>
+      <div class="f ff"><label>Did they want to reorder?</label>
+        <select id="ci-reorder" onchange="toggleReorder()"><option value="no">No</option><option value="yes">Yes</option></select>
+      </div>
+      <div id="reorder-fields" style="display:none;grid-column:1/-1">
+        <div class="fg">
+          <div class="f ff"><label>How many master cartons? (1 carton = 20 boxes)</label><input id="ci-cartons" type="number" placeholder="1" min="1" oninput="updateBoxCalc()"></div>
+          <div id="box-calc" style="font-size:11px;color:#0F6E56;padding:2px 0;grid-column:1/-1"></div>
+          <div class="f"><label>Payment received?</label>
+            <select id="ci-pay"><option value="no">No — outstanding</option><option value="yes">Yes — collected</option></select>
+          </div>
+          <div class="f"><label>Payment method</label>
+            <select id="ci-paymethod"><option value="">—</option><option>Venmo</option><option>Zelle</option><option>Cash</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="f ff"><label>Update status</label>
+        <select id="ci-status"><option value="">No change</option><option>Contacted</option><option>Sampled</option><option>Active</option><option>Reordering</option><option>Dead</option></select>
+      </div>
+      <div class="f ff"><label>Notes</label><textarea id="ci-notes" placeholder="What happened? Any feedback?"></textarea></div>
+    </div></div>
+    <div class="mf">
+      <button class="btn-s" onclick="closeM('m-ci')">Cancel</button>
+      <button class="btn-p" onclick="saveCi()">Save check-in</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://wldertprtchjlllvrxya.supabase.co';
+const SB_KEY='sb_publishable_G-13jlOcfzaU-TSRHZ_jPg_DEMjRTtj';
+const H={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+
+let accounts=[];
+let curId=null,editId=null,dTab='info';
+
+function setSyncStatus(ok){
+  const d=document.getElementById('sync-dot');
+  d.className='sync-dot '+(ok?'ok':'err');
+  d.title=ok?'Synced':'Sync error';
+}
+
+async function fetchAccounts(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/accounts?select=*&order=updated_at.desc`,{headers:H});
+    if(!r.ok)throw new Error();
+    const rows=await r.json();
+    accounts=rows.map(row=>({...row.data,id:row.id}));
+    setSyncStatus(true);render();
+  }catch(e){
+    setSyncStatus(false);
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="8" class="empty-s">Could not connect. Check your internet connection.</td></tr>`;
+  }
+}
+
+async function upsertAccount(acc){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/accounts`,{
+      method:'POST',
+      headers:{...H,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({id:acc.id,data:acc,updated_at:new Date().toISOString()})
+    });
+    if(!r.ok)throw new Error();
+    setSyncStatus(true);
+  }catch(e){setSyncStatus(false);}
+}
+
+async function saveAndSync(acc){
+  const idx=accounts.findIndex(a=>a.id===acc.id);
+  if(idx>-1)accounts[idx]=acc;else accounts.unshift(acc);
+  render();await upsertAccount(acc);
+}
+
+function latestBoxes(a){return a.checkins&&a.checkins.length?a.checkins[0].boxesLeft:a.boxes||0;}
+function isLowStock(a){return ['Active','Reordering'].includes(a.status)&&latestBoxes(a)<=5;}
+function hasUnpaid(a){return a.checkins&&a.checkins.some(c=>c.reorder==='yes'&&c.pay==='no');}
+function nextDue(a){
+  const last=a.checkins&&a.checkins.length?a.checkins[0].date:a.dateContacted;
+  const g={Contacted:4,Sampled:4,Active:14,Reordering:30,Dead:999};
+  if(!last)return null;
+  const d=new Date(last);d.setDate(d.getDate()+(g[a.status]||14));return d;
+}
+function isOD(a){const d=nextDue(a);return d&&d<new Date()&&a.status!=='Dead';}
+function fmtDate(d){if(!d)return '—';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function badge(s){
+  const m={Contacted:'s-contacted',Sampled:'s-sampled',Active:'s-active',Reordering:'s-reordering',Dead:'s-dead'};
+  return `<span class="badge ${m[s]||'s-dead'}">${s}</span>`;
+}
+
+function renderMetrics(){
+  const total=accounts.length;
+  const active=accounts.filter(a=>['Active','Reordering'].includes(a.status)).length;
+  const reord=accounts.filter(a=>a.status==='Reordering').length;
+  const low=accounts.filter(a=>isLowStock(a)).length;
+  const unpaid=accounts.filter(a=>hasUnpaid(a)).length;
+  document.getElementById('metrics').innerHTML=`
+    <div class="mcard"><div class="mlabel">Total accounts</div><div class="mval">${total}</div><div class="msub">${Math.round(active/Math.max(total,1)*100)}% active or reordering</div></div>
+    <div class="mcard"><div class="mlabel">Reorder rate</div><div class="mval">${Math.round(reord/Math.max(total,1)*100)}%</div><div class="msub">${reord} accounts reordering</div></div>
+    <div class="mcard${low?' amber':''}"><div class="mlabel">Low stock alerts</div><div class="mval">${low}</div><div class="msub">5 boxes or fewer left</div></div>
+    <div class="mcard${unpaid?' warn':''} clickable" onclick="showView('payments')"><div class="mlabel">Payments outstanding</div><div class="mval">${unpaid}</div><div class="msub">tap to view</div></div>`;
+}
+
+function renderTable(){
+  const srch=document.getElementById('srch').value.toLowerCase();
+  const fSt=document.getElementById('fSt').value;
+  const fTy=document.getElementById('fTy').value;
+  const fRg=document.getElementById('fRg').value;
+  const fRp=document.getElementById('fRp').value;
+  let list=accounts.filter(a=>{
+    if(fSt&&a.status!==fSt)return false;
+    if(fTy&&a.type!==fTy)return false;
+    if(fRg&&a.region!==fRg)return false;
+    if(fRp&&a.rep!==fRp)return false;
+    if(srch&&!a.name.toLowerCase().includes(srch))return false;
+    return true;
+  }).sort((a,b)=>{
+    const pa=(isOD(a)?2:0)+(isLowStock(a)?1:0)+(hasUnpaid(a)?1:0);
+    const pb=(isOD(b)?2:0)+(isLowStock(b)?1:0)+(hasUnpaid(b)?1:0);
+    return pb-pa;
+  });
+  const tbody=document.getElementById('tbody');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="8" class="empty-s">${accounts.length?'No accounts match filters.':'No accounts yet. Add one to get started.'}</td></tr>`;return;}
+  tbody.innerHTML=list.map(a=>{
+    const low=isLowStock(a),od=isOD(a),pay=hasUnpaid(a);
+    const boxes=latestBoxes(a);
+    const last=a.checkins&&a.checkins.length?fmtDate(a.checkins[0].date):'—';
+    let alert='—';
+    if(od)alert=`<span class="badge flag-od">Overdue</span>`;
+    else if(low)alert=`<span class="badge flag-low">Low stock</span>`;
+    else if(pay)alert=`<span class="badge flag-pay">Unpaid</span>`;
+    return `<tr onclick="openDetail('${a.id}')">
+      <td style="font-weight:500">${a.name}</td>
+      <td>${a.type}</td><td>${a.region}</td>
+      <td>${badge(a.status)}</td><td>${a.rep}</td>
+      <td>${['Active','Reordering'].includes(a.status)?boxes:'—'}</td>
+      <td>${last}</td><td>${alert}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderKanban(){
+  const cols=['Contacted','Sampled','Active','Reordering','Dead'];
+  document.getElementById('kboard').innerHTML=cols.map(s=>{
+    const items=accounts.filter(a=>a.status===s);
+    return `<div class="kcol">
+      <div class="kch"><span>${s}</span><span>${items.length}</span></div>
+      ${items.map(a=>`<div class="kcard" onclick="openDetail('${a.id}')">
+        <div class="kn">${a.name}</div><div class="ks">${a.region} · ${a.rep}</div>
+        ${isLowStock(a)?`<div style="margin-top:4px"><span class="badge flag-low" style="font-size:10px">Low stock</span></div>`:''}
+        ${hasUnpaid(a)?`<div style="margin-top:3px"><span class="badge flag-pay" style="font-size:10px">Unpaid</span></div>`:''}
+      </div>`).join('')||'<div style="font-size:11px;color:#999;padding:3px 0">None</div>'}
+    </div>`;
+  }).join('');
+}
+
+function renderPayments(){
+  const rows=[];
+  accounts.forEach(a=>{(a.checkins||[]).forEach(c=>{if(c.reorder==='yes')rows.push({acc:a,ci:c});});});
+  rows.sort((a,b)=>a.ci.pay==='yes'?1:-1);
+  const tbody=document.getElementById('pay-tbody');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="8" class="empty-s">No reorders logged yet.</td></tr>`;return;}
+  tbody.innerHTML=rows.map(({acc,ci})=>`<tr onclick="openDetail('${acc.id}')">
+    <td style="font-weight:500">${acc.name}</td>
+    <td>${acc.region}</td><td>${acc.rep}</td>
+    <td>${ci.cartons} carton${ci.cartons!==1?'s':''}</td>
+    <td>${ci.cartons*20} boxes</td>
+    <td>${ci.pay==='yes'?'<span class="badge s-reordering">Collected</span>':'<span class="badge flag-pay">Outstanding</span>'}</td>
+    <td>${ci.paymethod||'—'}</td><td>${fmtDate(ci.date)}</td>
+  </tr>`).join('');
+}
+
+function renderInsights(){
+  const byType={},byRegion={},byRep={};
+  let totalBoxes=0,reorderCount=0,paidCount=0,unpaidCount=0;
+  accounts.forEach(a=>{
+    byType[a.type]=(byType[a.type]||0)+1;
+    byRegion[a.region||'Unknown']=(byRegion[a.region||'Unknown']||0)+1;
+    byRep[a.rep]=(byRep[a.rep]||0)+1;
+    (a.checkins||[]).forEach(c=>{
+      if(c.reorder==='yes'){reorderCount++;totalBoxes+=c.cartons*20;if(c.pay==='yes')paidCount++;else unpaidCount++;}
+    });
+  });
+  const total=accounts.length;
+  const reord=accounts.filter(a=>a.status==='Reordering').length;
+  document.getElementById('igrid').innerHTML=`
+    <div class="ic"><h3>By store type</h3>${Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="ir"><span class="ir-l">${k}</span><span class="ir-v">${v}</span></div>`).join('')||'<div class="empty-s">No data yet</div>'}</div>
+    <div class="ic"><h3>By region</h3>${Object.entries(byRegion).map(([k,v])=>`<div class="ir"><span class="ir-l">${k}</span><span class="ir-v">${v}</span></div>`).join('')}
+      <div style="margin-top:10px"><h3>By rep</h3>${Object.entries(byRep).map(([k,v])=>`<div class="ir"><span class="ir-l">${k}</span><span class="ir-v">${v}</span></div>`).join('')}</div>
+    </div>
+    <div class="ic"><h3>Performance</h3>
+      <div class="ir"><span class="ir-l">Total accounts</span><span class="ir-v">${total}</span></div>
+      <div class="ir"><span class="ir-l">Reorder rate</span><span class="ir-v">${Math.round(reord/Math.max(total,1)*100)}%</span></div>
+      <div class="ir"><span class="ir-l">Total reorders</span><span class="ir-v">${reorderCount}</span></div>
+      <div class="ir"><span class="ir-l">Total boxes reordered</span><span class="ir-v">${totalBoxes}</span></div>
+      <div class="ir"><span class="ir-l">Payments collected</span><span class="ir-v">${paidCount}</span></div>
+      <div class="ir"><span class="ir-l">Payments outstanding</span><span class="ir-v" style="${unpaidCount?'color:#A32D2D':''}">${unpaidCount}</span></div>
+    </div>`;
+}
+
+function render(){renderMetrics();renderTable();renderKanban();renderPayments();renderInsights();}
+
+function showView(v){
+  ['accounts','kanban','payments','insights'].forEach(x=>document.getElementById('v-'+x).style.display=x===v?'block':'none');
+  document.querySelectorAll('.nb').forEach((b,i)=>b.classList.toggle('on',['accounts','kanban','payments','insights'][i]===v));
+}
+
+function openAdd(){
+  editId=null;
+  document.getElementById('m-add-title').textContent='Add account';
+  ['a-name','a-street','a-city','a-state','a-zip','a-contact','a-phone','a-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('a-boxes').value='';
+  document.getElementById('a-status').value='Contacted';
+  document.getElementById('a-placement').value='';
+  document.getElementById('a-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('m-add').classList.add('open');
+}
+
+function startEdit(){
+  const a=accounts.find(x=>x.id===curId);if(!a)return;
+  editId=curId;closeM('m-detail');
+  document.getElementById('m-add-title').textContent='Edit account';
+  document.getElementById('a-name').value=a.name||'';
+  document.getElementById('a-type').value=a.type||'Bar';
+  document.getElementById('a-status').value=a.status||'Contacted';
+  document.getElementById('a-street').value=a.street||'';
+  document.getElementById('a-city').value=a.city||'';
+  document.getElementById('a-state').value=a.state||'';
+  document.getElementById('a-zip').value=a.zip||'';
+  document.getElementById('a-region').value=a.region||'NYC';
+  document.getElementById('a-placement').value=a.placement||'';
+  document.getElementById('a-boxes').value=a.boxes||0;
+  document.getElementById('a-contact').value=a.contact||'';
+  document.getElementById('a-phone').value=a.phone||'';
+  document.getElementById('a-rep').value=a.rep||'Wyatt';
+  document.getElementById('a-date').value=a.dateContacted||'';
+  document.getElementById('a-notes').value=a.notes||'';
+  document.getElementById('m-add').classList.add('open');
+}
+
+function saveAccount(){
+  const name=document.getElementById('a-name').value.trim();
+  if(!name){alert('Store name is required');return;}
+  const acc={
+    id:editId||'a'+Date.now(),
+    name,type:document.getElementById('a-type').value,
+    status:document.getElementById('a-status').value,
+    street:document.getElementById('a-street').value,
+    city:document.getElementById('a-city').value,
+    state:document.getElementById('a-state').value.toUpperCase(),
+    zip:document.getElementById('a-zip').value,
+    region:document.getElementById('a-region').value,
+    placement:document.getElementById('a-placement').value,
+    boxes:parseInt(document.getElementById('a-boxes').value)||0,
+    contact:document.getElementById('a-contact').value,
+    phone:document.getElementById('a-phone').value,
+    rep:document.getElementById('a-rep').value,
+    dateContacted:document.getElementById('a-date').value,
+    notes:document.getElementById('a-notes').value,
+    checkins:editId?(accounts.find(a=>a.id===editId)||{}).checkins||[]:[]
+  };
+  closeM('m-add');saveAndSync(acc);
+}
+
+function openDetail(id){curId=id;dTab='info';renderDetail();document.getElementById('m-detail').classList.add('open');}
+
+function renderDetail(){
+  const a=accounts.find(x=>x.id===curId);if(!a)return;
+  document.getElementById('d-name').textContent=a.name;
+  const low=isLowStock(a),od=isOD(a),pay=hasUnpaid(a),boxes=latestBoxes(a);
+  document.getElementById('d-body').innerHTML=`
+    <div class="dtabs">
+      <button class="dtab${dTab==='info'?' on':''}" onclick="switchTab('info')">Info</button>
+      <button class="dtab${dTab==='ci'?' on':''}" onclick="switchTab('ci')">Check-ins (${(a.checkins||[]).length})</button>
+    </div>
+    ${od?`<div class="low-notice">Check-in overdue — was due ${fmtDate(nextDue(a))}</div>`:''}
+    ${low&&!od?`<div class="low-notice">Low stock — ${boxes} box${boxes!==1?'es':''} left. Ask about a reorder.</div>`:''}
+    ${pay?`<div class="pay-notice">Payment outstanding on a recent reorder.</div>`:''}
+    ${dTab==='info'?`
+      <div class="info-grid">
+        <div class="info-item"><div class="il">Status</div>${badge(a.status)}</div>
+        <div class="info-item"><div class="il">Rep</div><div class="iv">${a.rep}</div></div>
+        <div class="info-item"><div class="il">Type</div><div class="iv">${a.type}</div></div>
+        <div class="info-item"><div class="il">Region</div><div class="iv">${a.region}</div></div>
+        <div class="info-item"><div class="il">Address</div><div class="iv">${[a.street,a.city,a.state,a.zip].filter(Boolean).join(', ')||'—'}</div></div>
+        <div class="info-item"><div class="il">Contact</div><div class="iv">${a.contact||'—'}${a.phone?' · '+a.phone:''}</div></div>
+        <div class="info-item"><div class="il">Placement</div><div class="iv">${a.placement||'Not placed yet'}</div></div>
+        <div class="info-item"><div class="il">Boxes remaining</div><div class="iv" style="${low?'color:#633806;font-weight:500':''}">${['Active','Reordering'].includes(a.status)?boxes:'—'}</div></div>
+      </div>
+      ${a.notes?`<div style="font-size:12px;color:#666;background:#f5f5f3;padding:9px 11px;border-radius:8px;margin-bottom:12px">${a.notes}</div>`:''}
+      <button class="btn-p" onclick="openCi()">+ Log check-in</button>
+    `:`
+      <div style="margin-bottom:10px"><button class="btn-p" onclick="openCi()">+ Log check-in</button></div>
+      ${(a.checkins||[]).length?(a.checkins||[]).map(c=>`
+        <div class="ci-item">
+          <div class="ci-date">${fmtDate(c.date)} · ${c.method||'In person'}${c.status&&c.status!==a.status?' · '+badge(c.status):''}</div>
+          ${c.notes?`<div class="ci-note">${c.notes}</div>`:''}
+          <div class="ci-row">
+            ${c.boxesLeft!=null?`<span class="pill${c.boxesLeft<=5?' low':''}">${c.boxesLeft} boxes left</span>`:''}
+            ${c.placement?`<span class="pill">${c.placement}</span>`:''}
+            ${c.reorder==='yes'?`<span class="pill reorder">${c.cartons} carton${c.cartons!==1?'s':''} · ${c.cartons*20} boxes</span>`:''}
+            ${c.reorder==='yes'&&c.pay==='yes'?`<span class="pill pay">Paid · ${c.paymethod}</span>`:c.reorder==='yes'?`<span class="pill nopay">Payment outstanding</span>`:''}
+          </div>
+        </div>`).join(''):'<div class="empty-s">No check-ins logged yet.</div>'}
+    `}`;
+}
+
+function switchTab(t){dTab=t;renderDetail();}
+
+function toggleReorder(){
+  document.getElementById('reorder-fields').style.display=document.getElementById('ci-reorder').value==='yes'?'block':'none';
+}
+
+function updateBoxCalc(){
+  const c=parseInt(document.getElementById('ci-cartons').value)||0;
+  document.getElementById('box-calc').textContent=c?`= ${c*20} boxes`:'';
+}
+
+function openCi(){
+  ['ci-boxes','ci-cartons','ci-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ci-method').value='In person';
+  document.getElementById('ci-placement').value='';
+  document.getElementById('ci-reorder').value='no';
+  document.getElementById('ci-pay').value='no';
+  document.getElementById('ci-paymethod').value='';
+  document.getElementById('ci-status').value='';
+  document.getElementById('reorder-fields').style.display='none';
+  document.getElementById('box-calc').textContent='';
+  document.getElementById('m-ci').classList.add('open');
+}
+
+function saveCi(){
+  const a=accounts.find(x=>x.id===curId);if(!a)return;
+  const ns=document.getElementById('ci-status').value;
+  const reorder=document.getElementById('ci-reorder').value;
+  const cartons=reorder==='yes'?parseInt(document.getElementById('ci-cartons').value)||1:0;
+  const newPlacement=document.getElementById('ci-placement').value;
+  const ci={
+    date:new Date().toISOString().split('T')[0],
+    method:document.getElementById('ci-method').value,
+    boxesLeft:parseInt(document.getElementById('ci-boxes').value)||0,
+    placement:newPlacement,reorder,cartons,
+    pay:reorder==='yes'?document.getElementById('ci-pay').value:'no',
+    paymethod:reorder==='yes'?document.getElementById('ci-paymethod').value:'',
+    status:ns||a.status,
+    notes:document.getElementById('ci-notes').value
+  };
+  const updated={...a,checkins:[ci,...(a.checkins||[])]};
+  if(ns)updated.status=ns;
+  if(newPlacement)updated.placement=newPlacement;
+  closeM('m-ci');saveAndSync(updated);curId=updated.id;renderDetail();
+}
+
+function closeM(id){document.getElementById(id).classList.remove('open');}
+
+fetchAccounts();
+</script>
+</body>
+</html>
