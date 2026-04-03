@@ -158,7 +158,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <input type="text" id="srch" placeholder="Search by store name..." oninput="renderTable()">
       <select id="fSt" onchange="renderTable()">
         <option value="">All statuses</option>
-        <option>Not Visited</option><option>Pitched</option><option>Sampling</option><option>Active</option><option>Dead</option>
+        <option>Not Visited</option><option>Pitched</option><option>Trial</option><option>Active</option><option>Dead</option>
       </select>
       <select id="fTy" onchange="renderTable()"><option value="">All types</option><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select>
       <select id="fRg" onchange="renderTable()"><option value="">All regions</option><option>NYC</option><option>Boston</option><option>Providence</option><option>New Jersey</option></select>
@@ -189,7 +189,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       </div>
       <div class="f"><label>Status</label>
         <select id="a-status">
-          <option>Not Visited</option><option>Pitched</option><option>Sampling</option><option>Active</option><option>Dead</option>
+          <option>Not Visited</option><option>Pitched</option><option>Trial</option><option>Active</option><option>Dead</option>
         </select>
       </div>
       <div class="sec-label">Address</div>
@@ -245,7 +245,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 
       <div id="ci-bogo-section" style="display:none;grid-column:1/-1">
         <div style="background:#E1F5EE;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px;color:#0F6E56">
-          <strong>Sampling visit checklist</strong><br>
+          <strong>Trial visit checklist</strong><br>
           Collect payment for 1 box · Drop 2 boxes + fridge mount · Get decision maker's phone number
         </div>
         <div class="fg">
@@ -292,7 +292,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <div class="f ff"><label>Update status</label>
         <select id="ci-status">
           <option value="">No change</option>
-          <option>Not Visited</option><option>Pitched</option><option>Sampling</option><option>Active</option><option>Dead</option>
+          <option>Not Visited</option><option>Pitched</option><option>Trial</option><option>Active</option><option>Dead</option>
         </select>
       </div>
       <div class="f ff"><label>Notes</label><textarea id="ci-notes" placeholder="What happened? Feedback? Next step?"></textarea></div>
@@ -390,11 +390,11 @@ async function saveAndSync(acc){
 }
 
 function latestBoxes(a){return a.checkins&&a.checkins.length?a.checkins[0].boxesLeft:a.boxes||0;}
-function isLowStock(a){return ['Sampling','Active'].includes(a.status)&&latestBoxes(a)<=5;}
+function isLowStock(a){return ['Trial','Active'].includes(a.status)&&latestBoxes(a)<=5;}
 function hasUnpaid(a){return a.checkins&&a.checkins.some(c=>(c.reorder==='yes'&&c.pay==='no')||(c.bogoPayment==='no'&&c.isBogo));}
 function nextDue(a){
   const last=a.checkins&&a.checkins.length?a.checkins[0].date:a.dateContacted;
-  const g={'Not Visited':999,Pitched:3,Sampling:7,Active:7,Dead:999};
+  const g={'Not Visited':999,Pitched:3,Trial:7,Active:7,Dead:999};
   if(!last||g[a.status]===999)return null;
   const d=new Date(last);d.setDate(d.getDate()+g[a.status]);return d;
 }
@@ -402,19 +402,19 @@ function isOD(a){const d=nextDue(a);return d&&d<new Date()&&!['Not Visited','Dea
 function fmtDate(d){if(!d)return '—';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
 
 function badge(s){
-  const m={'Not Visited':'s-notvisited',Pitched:'s-pitched',Sampling:'s-sampling',Active:'s-active',Dead:'s-dead'};
+  const m={'Not Visited':'s-notvisited',Pitched:'s-pitched',Trial:'s-sampling',Active:'s-active',Dead:'s-dead'};
   return `<span class="badge ${m[s]||'s-notvisited'}">${s}</span>`;
 }
 
 function renderMetrics(){
   const total=accounts.length;
-  const active=accounts.filter(a=>['Sampling','Active'].includes(a.status)).length;
+  const active=accounts.filter(a=>['Trial','Active'].includes(a.status)).length;
   const fullyActive=accounts.filter(a=>a.status==='Active').length;
   const low=accounts.filter(a=>isLowStock(a)).length;
   const unpaid=accounts.filter(a=>hasUnpaid(a)).length;
   document.getElementById('metrics').innerHTML=`
     <div class="mcard"><div class="mlabel">Total accounts</div><div class="mval">${total}</div><div class="msub">${fullyActive} fully active</div></div>
-    <div class="mcard"><div class="mlabel">Sampling + active</div><div class="mval">${active}</div><div class="msub">${Math.round(active/Math.max(total,1)*100)}% of accounts</div></div>
+    <div class="mcard"><div class="mlabel">Trial + active</div><div class="mval">${active}</div><div class="msub">${Math.round(active/Math.max(total,1)*100)}% of accounts</div></div>
     <div class="mcard${low?' amber':''}"><div class="mlabel">Low stock alerts</div><div class="mval">${low}</div><div class="msub">5 boxes or fewer left</div></div>
     <div class="mcard${unpaid?' warn':''} clickable" onclick="showView('payments')"><div class="mlabel">Payments outstanding</div><div class="mval">${unpaid}</div><div class="msub">tap to view</div></div>`;
 }
@@ -451,14 +451,14 @@ function renderTable(){
       <td style="font-weight:500">${a.name}</td>
       <td>${a.type}</td><td>${a.region}</td>
       <td>${badge(a.status)}</td><td>${a.rep}</td>
-      <td>${['Sampling','Active'].includes(a.status)?boxes:'—'}</td>
+      <td>${['Trial','Active'].includes(a.status)?boxes:'—'}</td>
       <td>${last}</td><td>${alert}</td>
     </tr>`;
   }).join('');
 }
 
 function renderKanban(){
-  const cols=['Not Visited','Pitched','Sampling','Active','Dead'];
+  const cols=['Not Visited','Pitched','Trial','Active','Dead'];
   document.getElementById('kboard').innerHTML=cols.map(s=>{
     const items=accounts.filter(a=>a.status===s);
     return `<div class="kcol">
@@ -510,7 +510,7 @@ function renderInsights(){
   const total=accounts.length;
   const active=accounts.filter(a=>a.status==='Active').length;
   document.getElementById('igrid').innerHTML=`
-    <div class="ic"><h3>Pipeline</h3>${['Not Visited','Pitched','Sampling','Active','Dead'].map(s=>`<div class="ir"><span class="ir-l">${s}</span><span class="ir-v">${byStatus[s]||0}</span></div>`).join('')}</div>
+    <div class="ic"><h3>Pipeline</h3>${['Not Visited','Pitched','Trial','Active','Dead'].map(s=>`<div class="ir"><span class="ir-l">${s}</span><span class="ir-v">${byStatus[s]||0}</span></div>`).join('')}</div>
     <div class="ic"><h3>By region</h3>${Object.entries(byRegion).map(([k,v])=>`<div class="ir"><span class="ir-l">${k}</span><span class="ir-v">${v}</span></div>`).join('')}
       <div style="margin-top:10px"><h3>By rep</h3>${Object.entries(byRep).map(([k,v])=>`<div class="ir"><span class="ir-l">${k}</span><span class="ir-v">${v}</span></div>`).join('')}</div>
     </div>
@@ -625,7 +625,7 @@ function renderDetail(){
         <div class="info-item"><div class="il">Address</div><div class="iv">${[a.street,a.city,a.state,a.zip].filter(Boolean).join(', ')||'—'}</div></div>
         <div class="info-item"><div class="il">Decision maker</div><div class="iv">${a.contact||'—'}${a.phone?' · '+a.phone:''}</div></div>
         <div class="info-item"><div class="il">Placement</div><div class="iv">${a.placement||'Not placed yet'}</div></div>
-        <div class="info-item"><div class="il">Boxes remaining</div><div class="iv" style="${low?'color:#633806;font-weight:500':''}">${['Sampling','Active'].includes(a.status)?boxes:'—'}</div></div>
+        <div class="info-item"><div class="il">Boxes remaining</div><div class="iv" style="${low?'color:#633806;font-weight:500':''}">${['Trial','Active'].includes(a.status)?boxes:'—'}</div></div>
       </div>
       ${a.notes?`<div style="font-size:12px;color:#666;background:#f5f5f3;padding:9px 11px;border-radius:8px;margin-bottom:12px">${a.notes}</div>`:''}
       <button class="btn-p" onclick="openCi()">+ Log check-in</button>
@@ -665,12 +665,12 @@ function openCi(){
   document.getElementById('reorder-fields').style.display='none';
   document.getElementById('box-calc').textContent='';
 
-  const isSampling=a&&a.status==='Sampling';
+  const isTrial=a&&a.status==='Trial';
   const isNVorPitched=a&&['Not Visited','Pitched'].includes(a.status);
 
   document.getElementById('ci-bogo-section').style.display=isNVorPitched?'block':'none';
-  document.getElementById('ci-boxes-section').style.display=isSampling||a&&a.status==='Active'?'block':'none';
-  document.getElementById('ci-reorder-section').style.display=isSampling?'block':'none';
+  document.getElementById('ci-boxes-section').style.display=isTrial||a&&a.status==='Active'?'block':'none';
+  document.getElementById('ci-reorder-section').style.display=isTrial?'block':'none';
 
   document.getElementById('m-ci').classList.add('open');
 }
@@ -687,7 +687,7 @@ function saveCi(){
   const a=accounts.find(x=>x.id===curId);if(!a)return;
   const ns=document.getElementById('ci-status').value;
   const isNVorPitched=['Not Visited','Pitched'].includes(a.status);
-  const isSampling=a.status==='Sampling';
+  const isTrial=a.status==='Trial';
   const reorder=document.getElementById('ci-reorder').value;
   const cartons=reorder==='yes'?parseInt(document.getElementById('ci-cartons').value)||1:0;
   const newPlacement=document.getElementById('ci-placement').value;
@@ -708,7 +708,7 @@ function saveCi(){
   } else {
     ci.isBogo=false;
     ci.boxesLeft=parseInt(document.getElementById('ci-boxes').value)||0;
-    if(isSampling){
+    if(isTrial){
       ci.reorder=reorder;ci.cartons=cartons;
       ci.pay=reorder==='yes'?document.getElementById('ci-pay').value:'no';
       ci.paymethod=reorder==='yes'?document.getElementById('ci-paymethod').value:'';
