@@ -286,16 +286,16 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 <!-- Log PO Modal -->
 <div class="modal-bg" id="m-po">
   <div class="modal" style="max-width:420px">
-    <div class="mh"><h2>Log product order (PO)</h2><button class="xbtn" onclick="closeM('m-po')">×</button></div>
+    <div class="mh"><h2>Log product order (PO)</h2><button class="xbtn" onclick="cancelPO()">×</button></div>
     <div class="mb"><div class="fg">
       <div class="f ff"><label>Cartons ordered (1 carton = 20 boxes)</label><input id="po-cartons" type="number" placeholder="1" min="1" oninput="updatePOCalc()"></div>
-      <div class="f ff"><label>Boxes currently on shelf</label><input id="po-current" type="number" placeholder="0" min="0" oninput="updatePOCalc()"></div>
+      <div class="f ff"><label>Boxes currently on shelf <span style="color:#999;font-weight:400">(from check-in)</span></label><div class="readonly" id="po-current-ro">—</div></div>
       <div id="po-calc" class="calc-hint"></div>
       <div class="f ff"><label>Date order confirmed</label><input id="po-date" type="date"></div>
       <div class="f ff"><label>Notes</label><textarea id="po-notes" placeholder="Any details about this order..."></textarea></div>
     </div></div>
     <div class="mf">
-      <button class="btn-s" onclick="closeM('m-po')">Cancel</button>
+      <button class="btn-s" onclick="cancelPO()">Cancel</button>
       <button class="btn-p" onclick="savePO()">Save order</button>
     </div>
   </div>
@@ -342,6 +342,9 @@ const LOW_STOCK_THRESHOLD = 5;
 
 let accounts = [], curId = null, editId = null, dTab = 'info', invFilter = 'all';
 let curPOId = null;
+// Buffered check-in data when "Yes to PO" is tapped. Nothing is saved to
+// the DB until the PO modal is confirmed. On cancel, this is discarded.
+let pendingCheckin = null;
 
 // =============================================================
 // AUTH
@@ -489,11 +492,12 @@ async function deleteCheckinInDb(id) {
   try { const {error} = await sb.from('check_ins').delete().eq('id', id); if (error) throw error; setSyncStatus(true); return true; }
   catch(e) { console.error('deleteCheckin', e); setSyncStatus(false); return false; }
 }
-async function insertPOInDb(accountId, po) {
+async function insertPOInDb(accountId, po, checkInId) {
   const payload = {
     account_id: accountId, cartons: po.cartons,
     date_confirmed: po.dateConfirmed, notes: po.notes || null,
-    boxes_after_delivery: po.boxesAfterDelivery
+    boxes_after_delivery: po.boxesAfterDelivery,
+    check_in_id: checkInId || null
   };
   try { const {data, error} = await sb.from('purchase_orders').insert(payload).select().single(); if (error) throw error; setSyncStatus(true); return data; }
   catch(e) { console.error('insertPO', e); setSyncStatus(false); alert('Could not save order: '+(e.message||'')); return null; }
@@ -831,15 +835,15 @@ function renderDetail() {
         <button class="btn-p" onclick="openCi()">+ Log check-in</button>
       </div>` : ''}
       ${checkins.length ? `<div style="font-size:11px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Check-in history</div>
-      ${checkins.map(c => `<div class="ci-item">
+      ${checkins.map((c, i) => `<div class="ci-item">
         <div class="ci-date">${fmtShort(c.date)} · ${c.method}${c.status && c.status !== 'Pre-trial' ? ' · '+badge(c.status) : ''}</div>
         ${c.notes ? `<div class="ci-note">${c.notes}</div>` : ''}
         <div class="ci-pills">
           ${c.boxes!=null ? `<span class="pill${a.status==='Active'&&c.boxes<=LOW_STOCK_THRESHOLD?' low':''}">${boxesLabel(c.boxes)} left</span>` : ''}
         </div>
-        <div class="ci-actions">
+        ${i === 0 ? `<div class="ci-actions">
           <button class="ci-act del" onclick="askDeleteCi('${c.id}')">Delete &amp; roll back</button>
-        </div>
+        </div>` : ''}
       </div>`).join('')}` : ''}
     ` : `
       ${pos.length ? pos.map(po => `<div class="po-item">
@@ -864,16 +868,24 @@ function configureOutcomeButtons(status) {
   if (status === 'Pre-trial') {
     yes.innerText = '✅ Yes to trial - they paid for the box';
     yes.onclick = () => saveCiOutcome('trial');
+    later.style.display = '';
     later.innerText = '🤔 Will get back to us - check in next week';
     later.onclick = () => saveCiOutcome('later');
     dead.innerText = '❌ Said no - mark as Dead';
     dead.onclick = () => saveCiOutcome('dead');
-  } else {
-    // Trial or Active
+  } else if (status === 'Trial') {
     yes.innerText = '✅ Yes to PO - they want to order';
     yes.onclick = () => saveCiOutcome('po');
+    later.style.display = '';
     later.innerText = '📝 No change - just log the check-in';
     later.onclick = () => saveCiOutcome('later');
+    dead.innerText = '❌ No longer carry - mark as Dead';
+    dead.onclick = () => saveCiOutcome('dead');
+  } else {
+    // Active: only two outcomes — PO or Dead.
+    yes.innerText = '✅ Yes to PO - they want to reorder';
+    yes.onclick = () => saveCiOutcome('po');
+    later.style.display = 'none';
     dead.innerText = '❌ No longer carry - mark as Dead';
     dead.onclick = () => saveCiOutcome('dead');
   }
@@ -935,6 +947,24 @@ async function _performCiOutcome(accountId, outcome) {
     ? parseInt(boxesVal)
     : (outcome === 'trial' ? TRIAL_START_BOXES : null);
 
+  // "Yes to PO" — buffer the check-in and open the PO modal. Nothing is
+  // saved to the DB until the PO is confirmed. Cancelling the PO modal
+  // discards the buffered check-in entirely.
+  if (outcome === 'po') {
+    pendingCheckin = {
+      accountId: a.id,
+      method,
+      notes,
+      boxes: (boxes !== null ? boxes : getBoxes(a)),
+      date: new Date().toISOString().split('T')[0],
+      // After the PO lands, the account is Active. Record that on the check-in.
+      status: 'Active'
+    };
+    closeM('m-ci');
+    openPO();
+    return;
+  }
+
   let accPatch = {};
   let checkinStatus = a.status;
 
@@ -946,8 +976,6 @@ async function _performCiOutcome(accountId, outcome) {
     accPatch.status = 'Dead';
     checkinStatus = 'Dead';
   } else if (outcome === 'later') {
-    if (boxes !== null) accPatch.boxes_on_shelf = boxes;
-  } else if (outcome === 'po') {
     if (boxes !== null) accPatch.boxes_on_shelf = boxes;
   }
 
@@ -962,14 +990,7 @@ async function _performCiOutcome(accountId, outcome) {
   if (Object.keys(accPatch).length > 0) await updateAccountInDb(a.id, accPatch);
   else await touchAccount(a.id);
   await fetchAccounts();
-
-  if (outcome === 'po') {
-    // Open PO modal immediately - saving the PO will promote status to Active
-    // and bump boxes_on_shelf.
-    openPO();
-  } else if (document.getElementById('m-detail').classList.contains('open')) {
-    renderDetail();
-  }
+  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
 }
 
 // Generic confirm. Provide a callback instead of a type enum.
@@ -1032,41 +1053,76 @@ async function recomputeAccountFromEvents(accountId) {
 // =============================================================
 
 function openPO() {
-  ['po-cartons','po-current','po-notes'].forEach(id => document.getElementById(id).value = '');
+  // openPO is only ever called via a "Yes to PO" check-in outcome.
+  // pendingCheckin must already be set.
+  if (!pendingCheckin) return;
+  document.getElementById('po-cartons').value = '';
+  document.getElementById('po-notes').value = '';
   document.getElementById('po-date').value = new Date().toISOString().split('T')[0];
-  // Pre-fill current with the account's current box count (so rep doesn't have to retype)
-  const a = accounts.find(x => x.id === curId);
-  if (a) document.getElementById('po-current').value = getBoxes(a);
+  document.getElementById('po-current-ro').textContent = boxesLabel(pendingCheckin.boxes);
   document.getElementById('po-calc').textContent = '';
   document.getElementById('m-po').classList.add('open');
+  setTimeout(() => document.getElementById('po-cartons').focus(), 60);
 }
+
 function updatePOCalc() {
+  if (!pendingCheckin) { document.getElementById('po-calc').textContent = ''; return; }
   const cartons = parseInt(document.getElementById('po-cartons').value)||0;
-  const current = parseInt(document.getElementById('po-current').value)||0;
+  const current = pendingCheckin.boxes || 0;
   if (cartons > 0) {
     document.getElementById('po-calc').textContent = `${cartons} carton${cartons!==1?'s':''} = ${cartons*20} new boxes + ${current} on shelf = ${current+cartons*20} total after delivery`;
   } else document.getElementById('po-calc').textContent = '';
 }
 
+function cancelPO() {
+  // Discard the buffered check-in entirely.
+  pendingCheckin = null;
+  closeM('m-po');
+}
+
 async function savePO() {
-  const a = accounts.find(x => x.id === curId); if (!a) return;
-  const cartons = parseInt(document.getElementById('po-cartons').value)||1;
-  const current = parseInt(document.getElementById('po-current').value)||0;
+  if (!pendingCheckin) { closeM('m-po'); return; }
+  const cartonsStr = document.getElementById('po-cartons').value;
+  const cartons = parseInt(cartonsStr)||0;
+  if (cartons < 1) { alert('Enter at least 1 carton.'); return; }
+  const current = pendingCheckin.boxes || 0;
   const totalAfter = current + cartons*20;
+  const poNotes = document.getElementById('po-notes').value.trim();
+  const dateConfirmed = document.getElementById('po-date').value || new Date().toISOString().split('T')[0];
+
+  const accountId = pendingCheckin.accountId;
+
+  // 1. Insert the check-in that triggered this PO.
+  const ci = {
+    date: pendingCheckin.date,
+    method: pendingCheckin.method,
+    boxes: current,
+    status: 'Active',
+    notes: pendingCheckin.notes
+  };
+  const savedCi = await insertCheckinInDb(accountId, ci);
+  if (!savedCi) return; // alert already shown
+
+  // 2. Insert the PO, linked to the check-in via check_in_id (CASCADE).
   const po = {
     cartons,
-    dateConfirmed: document.getElementById('po-date').value,
-    notes: document.getElementById('po-notes').value.trim(),
+    dateConfirmed,
+    notes: poNotes,
     boxesAfterDelivery: totalAfter
   };
+  const savedPo = await insertPOInDb(accountId, po, savedCi.id);
+  if (!savedPo) {
+    // Roll back the check-in so we don't leave a zombie record.
+    await deleteCheckinInDb(savedCi.id);
+    return;
+  }
+
+  // 3. Promote account to Active with new box total.
+  await updateAccountInDb(accountId, {status: 'Active', boxes_on_shelf: totalAfter});
+
+  // Done — clean up.
+  pendingCheckin = null;
   closeM('m-po');
-  await insertPOInDb(a.id, po);
-  const patch = {boxes_on_shelf: totalAfter};
-  // Logging a PO promotes Trial → Active. Pre-trial accounts shouldn't have POs
-  // (they should run the trial first), but if it happens we still promote
-  // straight to Active rather than leaving it stuck.
-  if (a.status === 'Trial' || a.status === 'Pre-trial') patch.status = 'Active';
-  await updateAccountInDb(a.id, patch);
   await fetchAccounts();
   dTab = 'orders';
   if (document.getElementById('m-detail').classList.contains('open')) renderDetail();

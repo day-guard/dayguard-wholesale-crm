@@ -65,6 +65,10 @@ CREATE INDEX check_ins_date_idx    ON public.check_ins(date DESC);
 CREATE TABLE public.purchase_orders (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id           UUID NOT NULL REFERENCES public.accounts(id) ON DELETE CASCADE,
+  -- A PO is created as the result of a check-in with outcome "Yes to PO".
+  -- When the originating check-in is deleted (rolled back), the PO goes
+  -- with it via ON DELETE CASCADE.
+  check_in_id          UUID REFERENCES public.check_ins(id) ON DELETE CASCADE,
   cartons              INT  NOT NULL CHECK (cartons > 0),
   boxes                INT  GENERATED ALWAYS AS (cartons * 20) STORED,
   date_confirmed       DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -84,6 +88,7 @@ CREATE TABLE public.purchase_orders (
 
 CREATE INDEX pos_account_idx      ON public.purchase_orders(account_id, date_confirmed DESC);
 CREATE INDEX pos_pay_status_idx   ON public.purchase_orders(pay_status);
+CREATE INDEX pos_check_in_idx     ON public.purchase_orders(check_in_id);
 CREATE INDEX pos_invoice_sent_idx ON public.purchase_orders(invoice_sent_date)
                                   WHERE invoice_sent_date IS NOT NULL;
 
