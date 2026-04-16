@@ -185,7 +185,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   <div id="v-accounts">
     <div class="filters">
       <input type="text" id="srch" placeholder="Search by store name..." oninput="renderTable()">
-      <select id="fSt" onchange="renderTable()"><option value="">All statuses</option><option>Not Visited</option><option>Trial</option><option>Active</option><option>Dead</option></select>
+      <select id="fSt" onchange="renderTable()"><option value="">All statuses</option><option>Pre-trial</option><option>Trial</option><option>Active</option><option>Dead</option></select>
       <select id="fTy" onchange="renderTable()"><option value="">All types</option><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select>
       <select id="fRp" onchange="renderTable()"><option value="">All reps</option><option>Wyatt</option><option>Kaedin</option><option>Felix</option></select>
     </div>
@@ -220,7 +220,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <div class="sec-label" style="margin-top:0;padding-top:0;border-top:none">Required</div>
       <div class="f ff"><label>Store name <span class="req">*</span></label><input id="a-name" placeholder="e.g. Murphy's Bar"></div>
       <div class="f"><label>Store type <span class="req">*</span></label><select id="a-type"><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select></div>
-      <div class="f"><label>Status <span class="req">*</span></label><select id="a-status" onchange="onStatusChange()"><option>Not Visited</option><option>Trial</option><option>Active</option><option>Dead</option></select></div>
+      <div class="f"><label>Status</label><div class="readonly" id="a-status-display">Pre-trial · changes via check-ins and POs</div></div>
       <div class="f ff"><label>Street address <span class="req">*</span></label><input id="a-street" placeholder="123 Main St"></div>
       <div class="f"><label>City <span class="req">*</span></label><input id="a-city" placeholder="New York"></div>
       <div class="f"><label>State <span class="req">*</span></label><input id="a-state" placeholder="NY" maxlength="2"></div>
@@ -270,9 +270,17 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <div class="f ff" id="ci-dead-wrap" style="display:none">
         <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
           <input type="checkbox" id="ci-mark-dead" style="width:auto;margin:0">
-          <span>Mark this account as Dead (they said no)</span>
+          <span>They no longer want to carry day-guard - mark as Dead</span>
         </label>
         <div style="font-size:11px;color:#666;margin-top:3px">All check-ins, orders, and notes will be kept for the record.</div>
+      </div>
+      <div class="f ff" id="ci-outcome-wrap" style="display:none">
+        <label style="margin-bottom:6px">How did it go?</label>
+        <div style="display:grid;grid-template-columns:1fr;gap:6px">
+          <button type="button" class="btn-p" style="padding:10px;font-size:13px" onclick="saveCiOutcome('trial')">✅ Yes to trial - they paid for the box</button>
+          <button type="button" class="btn-s" style="padding:10px;font-size:13px" onclick="saveCiOutcome('later')">🤔 Will get back to us - check in next week</button>
+          <button type="button" class="btn-del" style="padding:10px;font-size:13px" onclick="saveCiOutcome('dead')">❌ Said no - mark as Dead</button>
+        </div>
       </div>
       <div class="f ff" id="ci-date-wrap" style="display:none"><label>Date of check-in</label><input id="ci-date" type="date"></div>
     </div></div>
@@ -526,17 +534,17 @@ function hasOverdueInv(a) { return (a.pos||[]).some(po => po.payStatus !== 'paid
 function hasUnsentInv(a) { return (a.pos||[]).some(po => po.payStatus !== 'paid' && !po.invoiceSentDate); }
 function nextDue(a) {
   const last = a.checkins && a.checkins.length ? a.checkins[0].date : a.dateAdded;
-  const g = {'Not Visited':999, 'Trial':7, 'Active':7, 'Dead':999};
+  const g = {'Pre-trial':999, 'Trial':7, 'Active':7, 'Dead':999};
   if (!last || g[a.status] === 999) return null;
   const d = new Date(last); d.setDate(d.getDate() + g[a.status]); return d;
 }
-function isOD(a) { const d = nextDue(a); return d && d < new Date() && !['Not Visited','Dead'].includes(a.status); }
+function isOD(a) { const d = nextDue(a); return d && d < new Date() && !['Pre-trial','Dead'].includes(a.status); }
 function daysSince(ds) { if (!ds) return 0; return Math.floor((new Date() - new Date(ds)) / 86400000); }
 function fmtShort(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
 function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}); }
 
 function badge(s) {
-  const m = {'Not Visited':'s-notvisited','Trial':'s-trial','Active':'s-active','Dead':'s-dead'};
+  const m = {'Pre-trial':'s-notvisited','Trial':'s-trial','Active':'s-active','Dead':'s-dead'};
   return `<span class="badge ${m[s]||'s-notvisited'}">${s}</span>`;
 }
 function invStatusBadge(po) {
@@ -660,7 +668,7 @@ function renderDashboard() {
   });
   const active = accounts.filter(a => a.status === 'Active').length;
   const convRate = total ? Math.round(active/total*100) : 0;
-  const kanbanCols = ['Not Visited','Trial','Active','Dead'].map(s => {
+  const kanbanCols = ['Pre-trial','Trial','Active','Dead'].map(s => {
     const items = accounts.filter(a => a.status === s);
     return `<div class="kcol">
       <div class="kch"><span>${s}</span><span>${items.length}</span></div>
@@ -678,7 +686,7 @@ function renderDashboard() {
     <div class="kanban-inline" style="margin-bottom:20px">${kanbanCols}</div>
     <div class="dash-grid">
       <div class="dash-card"><h3>Funnel breakdown</h3>
-        ${['Not Visited','Trial','Active','Dead'].map(s=>`<div class="dash-row"><span class="dash-row-l">${s}</span><span class="dash-row-v">${byStatus[s]||0}</span></div>`).join('')}
+        ${['Pre-trial','Trial','Active','Dead'].map(s=>`<div class="dash-row"><span class="dash-row-l">${s}</span><span class="dash-row-v">${byStatus[s]||0}</span></div>`).join('')}
         <div class="dash-row" style="margin-top:6px;border-top:0.5px solid rgba(0,0,0,0.08);padding-top:8px"><span class="dash-row-l">Conversion rate</span><span class="dash-row-v">${convRate}%</span></div>
       </div>
       <div class="dash-card"><h3>By store type</h3>
@@ -709,16 +717,6 @@ function showView(v) {
 // ADD / EDIT ACCOUNT
 // =============================================================
 
-function computeBoxesForStatus(status) {
-  return status === 'Trial' ? TRIAL_START_BOXES : 0;
-}
-
-function onStatusChange() {
-  // Live-update the read-only boxes preview when editing
-  if (!editId) return;
-  const a = accounts.find(x => x.id === editId); if (!a) return;
-  document.getElementById('a-boxes-readonly').textContent = getBoxes(a) + ' boxes · updated by check-ins and POs';
-}
 
 function openAdd() {
   editId = null;
@@ -726,28 +724,12 @@ function openAdd() {
   ['a-name','a-street','a-city','a-zip','a-contact','a-phone','a-notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('a-state').value = '';
   document.getElementById('a-type').value = 'Bar';
-  // On create, allow any starting status.
-  rebuildStatusDropdown('Not Visited');
+  document.getElementById('a-status-display').textContent = 'Pre-trial · changes via check-ins and POs';
   document.getElementById('a-rep').value = 'Wyatt';
   document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('a-boxes-wrap').style.display = 'none';
   document.getElementById('m-add').classList.add('open');
   setTimeout(() => document.getElementById('a-name').focus(), 60);
-}
-
-// Status transitions allowed from each state. Forward-only after Active,
-// with a "reopen" path from Dead → Not Visited as a safety valve.
-const STATUS_TRANSITIONS = {
-  'Not Visited': ['Not Visited','Trial','Active','Dead'],
-  'Trial':       ['Trial','Active','Dead'],
-  'Active':      ['Active','Dead'],
-  'Dead':        ['Dead','Not Visited']
-};
-
-function rebuildStatusDropdown(currentStatus) {
-  const sel = document.getElementById('a-status');
-  const allowed = STATUS_TRANSITIONS[currentStatus] || ['Not Visited','Trial','Active','Dead'];
-  sel.innerHTML = allowed.map(s => `<option${s===currentStatus?' selected':''}>${s}</option>`).join('');
 }
 
 function startEdit() {
@@ -756,7 +738,8 @@ function startEdit() {
   document.getElementById('m-add-title').textContent = 'Edit account';
   document.getElementById('a-name').value = a.name||'';
   document.getElementById('a-type').value = a.type||'Bar';
-  rebuildStatusDropdown(a.status||'Not Visited');
+  // Status is read-only - changed only by check-ins and POs.
+  document.getElementById('a-status-display').textContent = (a.status||'Pre-trial') + ' · changes via check-ins and POs';
   document.getElementById('a-street').value = a.street||'';
   document.getElementById('a-city').value = a.city||'';
   document.getElementById('a-state').value = a.state||'';
@@ -788,10 +771,14 @@ function validateAccountForm() {
 
 async function saveAccount() {
   if (!validateAccountForm()) return;
+  const existing = editId ? accounts.find(x => x.id === editId) : null;
   const acc = {
     name: document.getElementById('a-name').value.trim(),
     type: document.getElementById('a-type').value,
-    status: document.getElementById('a-status').value,
+    // Status is read-only in the form. On create it's always Pre-trial.
+    // On edit we preserve whatever the account already has - status only
+    // changes via check-ins and POs.
+    status: existing ? existing.status : 'Pre-trial',
     street: document.getElementById('a-street').value.trim(),
     city: document.getElementById('a-city').value.trim(),
     state: document.getElementById('a-state').value.trim().toUpperCase(),
@@ -806,10 +793,12 @@ async function saveAccount() {
   let saved;
   if (editId) {
     // Don't overwrite boxes_on_shelf on edit — it's managed by check-ins and POs.
-    saved = await updateAccountInDb(editId, accToDbPayload(acc));
+    const payload = accToDbPayload(acc);
+    delete payload.boxes_on_shelf; // also don't reset boxes
+    saved = await updateAccountInDb(editId, payload);
   } else {
-    // On create, auto-set boxes based on initial status.
-    acc.boxesOnShelf = computeBoxesForStatus(acc.status);
+    // New accounts always start at Pre-trial with 0 boxes.
+    acc.boxesOnShelf = 0;
     saved = await insertAccountInDb(acc);
   }
   if (saved) { editId = null; await fetchAccounts(); }
@@ -884,28 +873,47 @@ function renderDetail() {
 function openCi() {
   editingCiId = null;
   const a = accounts.find(x => x.id === curId); if (!a) return;
-  document.getElementById('m-ci-title').textContent = 'Log check-in';
-  document.getElementById('ci-save-btn').textContent = 'Save check-in';
-  document.getElementById('ci-method').value = a.status === 'Not Visited' ? 'In person' : 'Phone call';
+  document.getElementById('m-ci-title').textContent = a.status === 'Pre-trial' ? 'Log first visit' : 'Log check-in';
+  document.getElementById('ci-method').value = a.status === 'Pre-trial' ? 'In person' : 'Phone call';
   document.getElementById('ci-notes').value = '';
   document.getElementById('ci-date-wrap').style.display = 'none';
   document.getElementById('ci-mark-dead').checked = false;
+
   const boxesWrap = document.getElementById('ci-boxes-wrap');
   const boxesInput = document.getElementById('ci-boxes');
   const hint = document.getElementById('ci-boxes-hint');
-  if (a.status === 'Not Visited') {
+  const deadWrap = document.getElementById('ci-dead-wrap');
+  const outcomeWrap = document.getElementById('ci-outcome-wrap');
+  const saveBtn = document.getElementById('ci-save-btn');
+
+  if (a.status === 'Pre-trial') {
+    // First visit: show 3 outcome buttons. No boxes input. No "Mark as Dead" checkbox
+    // (one of the buttons IS "Said no"). No save button (the buttons save).
     boxesWrap.style.display = 'none';
     boxesInput.value = '';
-    hint.textContent = '';
+    deadWrap.style.display = 'none';
+    outcomeWrap.style.display = 'block';
+    saveBtn.style.display = 'none';
+  } else if (a.status === 'Dead') {
+    // Logging an after-the-fact note on a Dead account. No box change, no status change.
+    boxesWrap.style.display = 'none';
+    boxesInput.value = '';
+    deadWrap.style.display = 'none';
+    outcomeWrap.style.display = 'none';
+    saveBtn.style.display = '';
+    saveBtn.textContent = 'Save check-in';
   } else {
+    // Trial or Active: standard check-in. Boxes input + Mark as Dead checkbox + Save button.
     boxesWrap.style.display = 'block';
     boxesInput.value = getBoxes(a);
     hint.textContent = a.status === 'Trial'
       ? 'Ask how many sticks are left, round to nearest box (15+=2, 5-14=1, 0-4=0).'
       : 'Round to whole boxes.';
+    deadWrap.style.display = 'block';
+    outcomeWrap.style.display = 'none';
+    saveBtn.style.display = '';
+    saveBtn.textContent = 'Save check-in';
   }
-  // Show "Mark as Dead" except when account is already Dead.
-  document.getElementById('ci-dead-wrap').style.display = a.status === 'Dead' ? 'none' : 'block';
   document.getElementById('m-ci').classList.add('open');
 }
 
@@ -914,7 +922,9 @@ function editCi(id) {
   const c = (a.checkins||[]).find(x => x.id === id); if (!c) return;
   editingCiId = id;
   document.getElementById('m-ci-title').textContent = 'Edit check-in';
-  document.getElementById('ci-save-btn').textContent = 'Save changes';
+  const saveBtn = document.getElementById('ci-save-btn');
+  saveBtn.style.display = '';
+  saveBtn.textContent = 'Save changes';
   document.getElementById('ci-method').value = c.method || 'Phone call';
   document.getElementById('ci-notes').value = c.notes || '';
   document.getElementById('ci-date-wrap').style.display = 'block';
@@ -924,7 +934,8 @@ function editCi(id) {
   boxesWrap.style.display = 'block';
   boxesInput.value = (c.boxes !== null && c.boxes !== undefined) ? c.boxes : '';
   document.getElementById('ci-boxes-hint').textContent = 'Round to whole boxes.';
-  // Hide the Dead checkbox on edit — status changes happen via new check-ins or the edit account form.
+  // Edit never triggers status change. Hide outcome buttons and Dead checkbox.
+  document.getElementById('ci-outcome-wrap').style.display = 'none';
   document.getElementById('ci-dead-wrap').style.display = 'none';
   document.getElementById('ci-mark-dead').checked = false;
   document.getElementById('m-ci').classList.add('open');
@@ -955,30 +966,54 @@ async function saveCi() {
     return;
   }
 
-  // New check-in
+  // New check-in (Trial / Active / Dead). Pre-trial uses saveCiOutcome instead.
   const markDead = document.getElementById('ci-mark-dead').checked;
-  let boxes;
+  const boxesVal = document.getElementById('ci-boxes').value;
+  const boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
   let accPatch = {};
   if (markDead) {
-    // "They said no" - flip status to Dead. Don't auto-promote. Don't change boxes.
+    // Trial or Active account being closed out. Status → Dead. Don't change boxes.
     accPatch.status = 'Dead';
-    const boxesVal = document.getElementById('ci-boxes').value;
-    boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
-    // Don't update boxes_on_shelf - account is dead, count doesn't matter.
-  } else if (a.status === 'Not Visited') {
-    // First visit logged. Auto-promote to Trial, set boxes to 2.
-    boxes = TRIAL_START_BOXES;
-    accPatch.status = 'Trial';
-    accPatch.boxes_on_shelf = TRIAL_START_BOXES;
-  } else {
-    const boxesVal = document.getElementById('ci-boxes').value;
-    boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
-    if (boxes !== null) accPatch.boxes_on_shelf = boxes;
+  } else if (boxes !== null && a.status !== 'Dead') {
+    accPatch.boxes_on_shelf = boxes;
   }
   const ci = {
     date: new Date().toISOString().split('T')[0],
     method, boxes,
     status: accPatch.status || a.status,
+    notes
+  };
+  closeM('m-ci');
+  await insertCheckinInDb(a.id, ci);
+  if (Object.keys(accPatch).length > 0) await updateAccountInDb(a.id, accPatch);
+  else await touchAccount(a.id);
+  await fetchAccounts();
+  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
+}
+
+// Pre-trial check-in: outcome is one of 'trial', 'later', 'dead'.
+async function saveCiOutcome(outcome) {
+  const a = accounts.find(x => x.id === curId); if (!a) return;
+  if (a.status !== 'Pre-trial') return; // safety
+  const method = document.getElementById('ci-method').value;
+  const notes = document.getElementById('ci-notes').value.trim();
+  let accPatch = {};
+  let newStatus = 'Pre-trial';
+  let boxes = null;
+  if (outcome === 'trial') {
+    newStatus = 'Trial';
+    boxes = TRIAL_START_BOXES;
+    accPatch.status = 'Trial';
+    accPatch.boxes_on_shelf = TRIAL_START_BOXES;
+  } else if (outcome === 'dead') {
+    newStatus = 'Dead';
+    accPatch.status = 'Dead';
+  }
+  // 'later' = no status change, just record the check-in.
+  const ci = {
+    date: new Date().toISOString().split('T')[0],
+    method, boxes,
+    status: newStatus,
     notes
   };
   closeM('m-ci');
@@ -1054,7 +1089,10 @@ async function savePO() {
   closeM('m-po');
   await insertPOInDb(a.id, po);
   const patch = {boxes_on_shelf: totalAfter};
-  if (a.status === 'Trial' || a.status === 'Not Visited') patch.status = 'Active';
+  // Logging a PO promotes Trial → Active. Pre-trial accounts shouldn't have POs
+  // (they should run the trial first), but if it happens we still promote
+  // straight to Active rather than leaving it stuck.
+  if (a.status === 'Trial' || a.status === 'Pre-trial') patch.status = 'Active';
   await updateAccountInDb(a.id, patch);
   await fetchAccounts();
   dTab = 'orders';

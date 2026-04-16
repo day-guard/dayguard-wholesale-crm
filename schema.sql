@@ -17,8 +17,8 @@ CREATE TABLE public.accounts (
   name           TEXT NOT NULL,
   type           TEXT NOT NULL DEFAULT 'Bar'
                  CHECK (type IN ('Bar','Liquor store','Convenience','Grocery','Restaurant','Wholesale','Other')),
-  status         TEXT NOT NULL DEFAULT 'Not Visited'
-                 CHECK (status IN ('Not Visited','Trial','Active','Dead')),
+  status         TEXT NOT NULL DEFAULT 'Pre-trial'
+                 CHECK (status IN ('Pre-trial','Trial','Active','Dead')),
   rep            TEXT NOT NULL DEFAULT 'Wyatt'
                  CHECK (rep IN ('Wyatt','Kaedin','Felix')),
   street         TEXT,
@@ -51,7 +51,7 @@ CREATE TABLE public.check_ins (
   -- Note: column is named `units_remaining` for historical reasons.
   -- Semantically this is "boxes remaining on shelf" in the current app.
   status_at_checkin TEXT
-                    CHECK (status_at_checkin IN ('Not Visited','Trial','Active','Dead')),
+                    CHECK (status_at_checkin IN ('Pre-trial','Trial','Active','Dead')),
   notes             TEXT,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
