@@ -8,23 +8,35 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;font-size:14px;color:#1a1a1a}
 .login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login-box{background:#fff;border-radius:16px;border:0.5px solid rgba(0,0,0,0.1);padding:36px 32px;width:100%;max-width:320px;text-align:center}
+.login-box{background:#fff;border-radius:16px;border:0.5px solid rgba(0,0,0,0.1);padding:36px 32px;width:100%;max-width:340px;text-align:center}
 .login-logo{font-size:18px;font-weight:500;margin-bottom:6px}.login-logo em{color:#1D9E75;font-style:normal}
-.login-sub{font-size:12px;color:#999;margin-bottom:24px}
+.login-sub{font-size:12px;color:#999;margin-bottom:20px}
+.login-sub b{color:#1a1a1a;font-weight:500}
 .login-box input{width:100%;padding:10px 12px;font-size:14px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-family:inherit;text-align:center;margin-bottom:10px}
 .login-box input:focus{outline:none;border-color:#1D9E75}
-.login-btn{width:100%;padding:10px;font-size:13px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500}
+.login-box input.otp{font-size:22px;letter-spacing:6px;font-weight:500}
+.login-btn{width:100%;padding:10px;font-size:13px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500;margin-bottom:8px}
+.login-btn:hover{opacity:.92}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-btn.ghost{background:transparent;color:#666;border:0.5px solid rgba(0,0,0,0.15)}
+.login-btn.name{background:#fff;color:#1a1a1a;border:0.5px solid rgba(0,0,0,0.15)}
+.login-btn.name:hover{background:#f5f5f3}
 .login-err{font-size:12px;color:#A32D2D;margin-top:8px;display:none}
+.login-info{font-size:11px;color:#1D9E75;margin-top:6px;display:none}
 .app-screen{display:none}
 .topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
-.brand{font-size:14px;font-weight:500}.brand em{color:#1D9E75;font-style:normal}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block;margin-left:6px;vertical-align:middle}
+.brand{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}.brand em{color:#1D9E75;font-style:normal}
+.me-pill{font-size:11px;color:#0F6E56;background:#E1F5EE;border-radius:20px;padding:2px 9px;font-weight:500}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block}
 .sync-dot.ok{background:#1D9E75}.sync-dot.err{background:#E24B4A}
 .nav{display:flex;gap:3px}
 .nb{padding:5px 11px;font-size:12px;border-radius:8px;border:0.5px solid transparent;cursor:pointer;background:transparent;color:#666;font-family:inherit}
 .nb.on{background:#f0f0ee;border-color:rgba(0,0,0,0.1);color:#1a1a1a;font-weight:500}
 .nb:hover:not(.on){background:#f0f0ee}
+.right-actions{display:flex;gap:7px;align-items:center}
 .add-btn{padding:6px 14px;font-size:13px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500}
+.signout-btn{padding:5px 10px;font-size:11px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);cursor:pointer;background:transparent;color:#666;font-family:inherit}
+.signout-btn:hover{background:#f0f0ee;color:#1a1a1a}
 .content{padding:14px 18px}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .mcard{background:#ebebea;border-radius:8px;padding:11px 13px}
@@ -82,6 +94,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 .ci-pills{display:flex;flex-wrap:wrap;gap:4px}
 .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#f0f0ee;color:#666}
 .pill.low{background:#FAEEDA;color:#633806}
+.pill.who{background:#E1F5EE;color:#0F6E56}
 .empty-s{text-align:center;padding:24px;color:#999;font-size:12px}
 .notice{border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12px}
 .notice.amber{background:#FAEEDA;color:#633806}
@@ -140,25 +153,54 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 </head>
 <body>
 
-<div class="login-screen" id="login-screen">
+<!-- Login Step 1: email -->
+<div class="login-screen" id="login-email-screen" style="display:none">
   <div class="login-box">
     <div class="login-logo"><em>day–guard</em></div>
     <div class="login-sub">retail crm · team access only</div>
-    <input type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()">
-    <button class="login-btn" onclick="tryLogin()">Sign in</button>
-    <div class="login-err" id="login-err">Incorrect password. Try again.</div>
+    <input type="email" id="login-email" placeholder="team@dayguard.com" autocomplete="email" autocapitalize="none">
+    <button class="login-btn" id="send-otp-btn" onclick="sendOtp()">Send login code</button>
+    <div class="login-err" id="login-email-err"></div>
   </div>
 </div>
 
+<!-- Login Step 2: OTP -->
+<div class="login-screen" id="login-otp-screen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo"><em>day–guard</em></div>
+    <div class="login-sub">Code sent to <b id="otp-email"></b><br>Check the team inbox.</div>
+    <input type="text" id="login-otp" class="otp" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code">
+    <button class="login-btn" id="verify-otp-btn" onclick="verifyOtp()">Verify and sign in</button>
+    <button class="login-btn ghost" onclick="resetLogin()">Use a different email</button>
+    <div class="login-err" id="login-otp-err"></div>
+    <div class="login-info" id="login-otp-info">Code resent.</div>
+  </div>
+</div>
+
+<!-- Name picker -->
+<div class="login-screen" id="name-picker-screen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo"><em>day–guard</em></div>
+    <div class="login-sub">Who's using the app?</div>
+    <button class="login-btn name" onclick="setName('Wyatt')">Wyatt</button>
+    <button class="login-btn name" onclick="setName('Kaedin')">Kaedin</button>
+    <button class="login-btn name" onclick="setName('Felix')">Felix</button>
+  </div>
+</div>
+
+<!-- App -->
 <div class="app-screen" id="app-screen">
 <div class="topbar">
-  <div class="brand"><em>day–guard</em> retail crm <span class="sync-dot" id="sync-dot"></span></div>
+  <div class="brand"><em>day–guard</em> retail crm <span class="me-pill" id="me-pill"></span> <span class="sync-dot" id="sync-dot"></span></div>
   <div class="nav">
     <button class="nb on" onclick="showView('accounts')">Accounts</button>
     <button class="nb" onclick="showView('invoices')">Invoices</button>
     <button class="nb" onclick="showView('dashboard')">Dashboard</button>
   </div>
-  <button class="add-btn" onclick="openAdd()">+ Add account</button>
+  <div class="right-actions">
+    <button class="add-btn" onclick="openAdd()">+ Add account</button>
+    <button class="signout-btn" onclick="signOut()">Sign out</button>
+  </div>
 </div>
 
 <div class="content">
@@ -170,7 +212,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <select id="fSt" onchange="renderTable()"><option value="">All statuses</option><option>Not Visited</option><option>Trial</option><option>Active</option><option>Dead</option></select>
       <select id="fTy" onchange="renderTable()"><option value="">All types</option><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select>
       <select id="fRg" onchange="renderTable()"><option value="">All regions</option><option>NYC</option><option>Boston</option><option>Providence</option><option>New Jersey</option></select>
-      <select id="fRp" onchange="renderTable()"><option value="">All reps</option><option>Wyatt</option><option>Kaedin</option></select>
+      <select id="fRp" onchange="renderTable()"><option value="">All reps</option><option>Wyatt</option><option>Kaedin</option><option>Felix</option></select>
     </div>
     <div class="tw"><table>
       <thead><tr><th>Store</th><th>Type</th><th>Region</th><th>Status</th><th>Rep</th><th>Units left</th><th>Last check-in</th><th>Alert</th></tr></thead>
@@ -189,7 +231,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
     <div id="inv-list"></div>
   </div>
 
-  <div id="v-dashboard" style="display:none" id="v-dashboard">
+  <div id="v-dashboard" style="display:none">
     <div id="dash-content"></div>
   </div>
 </div>
@@ -216,7 +258,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <div class="f"><label>Contact name</label><input id="a-contact" placeholder="Decision maker"></div>
       <div class="f"><label>Phone</label><input id="a-phone" placeholder="(212) 555-0100"></div>
       <div class="f ff"><label>Shipping address (if different from store)</label><input id="a-ship" placeholder="Leave blank if same"></div>
-      <div class="f"><label>Assigned rep</label><select id="a-rep"><option>Wyatt</option><option>Kaedin</option></select></div>
+      <div class="f"><label>Assigned rep</label><select id="a-rep"><option>Wyatt</option><option>Kaedin</option><option>Felix</option></select></div>
       <div class="f"><label>Date added</label><input id="a-date" type="date"></div>
       <div class="f ff"><label>Notes</label><textarea id="a-notes" placeholder="Anything relevant..."></textarea></div>
     </div></div>
@@ -302,7 +344,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 <div class="confirm-overlay" id="confirm-del">
   <div class="confirm-box">
     <p>Delete this account?</p>
-    <small>This cannot be undone.</small>
+    <small>This also deletes all check-ins and orders for this account. Cannot be undone.</small>
     <div class="confirm-btns">
       <button class="btn-s" onclick="closeConfirm()">Cancel</button>
       <button class="btn-del" onclick="deleteAccount()">Yes, delete</button>
@@ -310,76 +352,294 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const PW = 'Teamdayguard26';
 const SB_URL = 'https://wldertprtchjlllvrxya.supabase.co';
 const SB_KEY = 'sb_publishable_G-13jlOcfzaU-TSRHZ_jPg_DEMjRTtj';
-const H = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const sb = supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true, storage: localStorage}});
+const VALID_REPS = ['Wyatt','Kaedin','Felix'];
 
 let accounts = [], curId = null, editId = null, dTab = 'info', invFilter = 'all', curPOId = null;
+let me = null;          // 'Wyatt' / 'Kaedin' / 'Felix' — name picker
+let pendingEmail = '';  // email used in OTP flow
 
-function tryLogin() {
-  const val = document.getElementById('pw-input').value;
-  if (val === PW) {
-    sessionStorage.setItem('dg_auth', '1');
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-screen').style.display = 'block';
-    fetchAccounts();
+// =============================================================
+// AUTH
+// =============================================================
+
+async function checkAuth() {
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    if (session) { afterAuth(); }
+    else { showLoginEmail(); }
+  } catch(e) { showLoginEmail(); }
+}
+
+function showLoginEmail() {
+  hideAllScreens();
+  document.getElementById('login-email-screen').style.display = 'flex';
+  setTimeout(() => document.getElementById('login-email').focus(), 50);
+}
+
+function hideAllScreens() {
+  ['login-email-screen','login-otp-screen','name-picker-screen','app-screen'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+}
+
+async function sendOtp() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const err = document.getElementById('login-email-err');
+  err.style.display = 'none';
+  if (!email || !email.includes('@')) {
+    err.textContent = 'Enter a valid email address';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('send-otp-btn');
+  btn.disabled = true; btn.textContent = 'Sending code...';
+  try {
+    const {error} = await sb.auth.signInWithOtp({email, options: {shouldCreateUser: false}});
+    if (error) throw error;
+    pendingEmail = email;
+    document.getElementById('otp-email').textContent = email;
+    hideAllScreens();
+    document.getElementById('login-otp-screen').style.display = 'flex';
+    setTimeout(() => document.getElementById('login-otp').focus(), 50);
+  } catch(e) {
+    err.textContent = (e.message && /not allowed|signup/i.test(e.message))
+      ? 'This email is not on the team list. Ask Felix to add it in Supabase.'
+      : (e.message || 'Could not send code. Try again.');
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send login code';
+  }
+}
+
+async function verifyOtp() {
+  const token = document.getElementById('login-otp').value.trim();
+  const err = document.getElementById('login-otp-err');
+  err.style.display = 'none';
+  if (!token || token.length < 6) {
+    err.textContent = 'Enter the 6-digit code from your email';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('verify-otp-btn');
+  btn.disabled = true; btn.textContent = 'Verifying...';
+  try {
+    const {error} = await sb.auth.verifyOtp({email: pendingEmail, token, type: 'email'});
+    if (error) throw error;
+    afterAuth();
+  } catch(e) {
+    err.textContent = e.message || 'Invalid or expired code. Send a new one.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Verify and sign in';
+  }
+}
+
+function resetLogin() {
+  document.getElementById('login-otp').value = '';
+  document.getElementById('login-otp-err').style.display = 'none';
+  document.getElementById('login-otp-info').style.display = 'none';
+  pendingEmail = '';
+  showLoginEmail();
+}
+
+function afterAuth() {
+  const savedName = localStorage.getItem('dg_user_name');
+  if (savedName && VALID_REPS.includes(savedName)) {
+    me = savedName;
+    showApp();
   } else {
-    document.getElementById('login-err').style.display = 'block';
-    document.getElementById('pw-input').value = '';
+    hideAllScreens();
+    document.getElementById('name-picker-screen').style.display = 'flex';
   }
 }
 
-function checkAuth() {
-  if (sessionStorage.getItem('dg_auth') === '1') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-screen').style.display = 'block';
-    fetchAccounts();
-  }
+function setName(name) {
+  if (!VALID_REPS.includes(name)) return;
+  me = name;
+  localStorage.setItem('dg_user_name', name);
+  showApp();
 }
+
+function showApp() {
+  hideAllScreens();
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('me-pill').textContent = me;
+  fetchAccounts();
+}
+
+async function signOut() {
+  try { await sb.auth.signOut(); } catch(e) {}
+  // Keep dg_user_name so the same browser remembers Wyatt vs Kaedin next time
+  location.reload();
+}
+
+// =============================================================
+// DATA LAYER — 3 tables (accounts / check_ins / purchase_orders)
+// =============================================================
 
 function setSyncStatus(ok) {
   const d = document.getElementById('sync-dot');
   d.className = 'sync-dot ' + (ok ? 'ok' : 'err');
 }
 
+// Map a DB account row (with nested check_ins, purchase_orders) to in-memory shape
+function dbToAcc(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    status: row.status,
+    region: row.region,
+    rep: row.rep,
+    street: row.street||'',
+    city: row.city||'',
+    state: row.state||'',
+    zip: row.zip||'',
+    contact: row.contact||'',
+    phone: row.phone||'',
+    shipAddress: row.ship_address||'',
+    placement: row.placement||'',
+    boxesOnShelf: row.boxes_on_shelf||0,
+    notes: row.notes||'',
+    dateAdded: row.date_added,
+    updated_at: row.updated_at,
+    checkins: (row.check_ins||[]).map(c => ({
+      id: c.id,
+      date: c.date,
+      method: c.method,
+      units: c.units_remaining,
+      placement: c.placement||'',
+      status: c.status_at_checkin,
+      notes: c.notes||'',
+      loggedBy: c.logged_by
+    })).sort((a,b) => (a.date < b.date ? 1 : -1)),
+    pos: (row.purchase_orders||[]).map(p => ({
+      id: p.id,
+      cartons: p.cartons,
+      dateConfirmed: p.date_confirmed,
+      shipAddress: p.ship_address||'',
+      notes: p.notes||'',
+      invoiceSentDate: p.invoice_sent_date,
+      payStatus: p.pay_status,
+      payMethod: p.pay_method,
+      datePaid: p.date_paid,
+      boxesAfterDelivery: p.boxes_after_delivery,
+      loggedBy: p.logged_by
+    })).sort((a,b) => (a.dateConfirmed < b.dateConfirmed ? 1 : -1))
+  };
+}
+
 async function fetchAccounts() {
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/accounts?select=*&order=updated_at.desc`, {headers: H});
-    if (!r.ok) throw new Error();
-    const rows = await r.json();
-    accounts = rows.map(row => ({...row.data, id: row.id}));
+    const {data, error} = await sb.from('accounts')
+      .select('*, check_ins(*), purchase_orders(*)')
+      .order('updated_at', {ascending: false});
+    if (error) throw error;
+    accounts = data.map(dbToAcc);
     setSyncStatus(true);
     render();
   } catch(e) {
+    console.error('fetchAccounts', e);
     setSyncStatus(false);
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="8" class="empty-s">Could not connect.</td></tr>';
+    document.getElementById('tbody').innerHTML =
+      `<tr><td colspan="8" class="empty-s">Could not load. ${e.message||''}</td></tr>`;
   }
 }
 
-async function upsertAccount(acc) {
+function accToDbPayload(a) {
+  return {
+    name: a.name,
+    type: a.type,
+    status: a.status,
+    region: a.region,
+    rep: a.rep,
+    street: a.street||null,
+    city: a.city||null,
+    state: a.state||null,
+    zip: a.zip||null,
+    contact: a.contact||null,
+    phone: a.phone||null,
+    ship_address: a.shipAddress||null,
+    placement: a.placement||null,
+    boxes_on_shelf: a.boxesOnShelf||0,
+    notes: a.notes||null,
+    date_added: a.dateAdded || new Date().toISOString().split('T')[0]
+  };
+}
+
+async function insertAccountInDb(a) {
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/accounts`, {
-      method: 'POST',
-      headers: {...H, 'Prefer': 'resolution=merge-duplicates'},
-      body: JSON.stringify({id: acc.id, data: acc, updated_at: new Date().toISOString()})
-    });
-    if (!r.ok) throw new Error();
-    setSyncStatus(true);
-  } catch(e) { setSyncStatus(false); }
+    const {data, error} = await sb.from('accounts').insert(accToDbPayload(a)).select().single();
+    if (error) throw error;
+    setSyncStatus(true); return data;
+  } catch(e) { console.error('insertAccount', e); setSyncStatus(false); alert('Could not save: '+(e.message||'')); return null; }
 }
 
-async function deleteFromDB(id) {
-  try { await fetch(`${SB_URL}/rest/v1/accounts?id=eq.${id}`, {method:'DELETE', headers:H}); } catch(e) {}
+async function updateAccountInDb(id, patch) {
+  try {
+    const {data, error} = await sb.from('accounts').update(patch).eq('id', id).select().single();
+    if (error) throw error;
+    setSyncStatus(true); return data;
+  } catch(e) { console.error('updateAccount', e); setSyncStatus(false); alert('Could not save: '+(e.message||'')); return null; }
 }
 
-async function saveAndSync(acc) {
-  const idx = accounts.findIndex(a => a.id === acc.id);
-  if (idx > -1) accounts[idx] = acc; else accounts.unshift(acc);
-  render();
-  await upsertAccount(acc);
+async function deleteAccountInDb(id) {
+  try { const {error} = await sb.from('accounts').delete().eq('id', id); if (error) throw error; setSyncStatus(true); }
+  catch(e) { console.error('deleteAccount', e); setSyncStatus(false); }
 }
+
+async function insertCheckinInDb(accountId, c) {
+  const payload = {
+    account_id: accountId,
+    date: c.date,
+    method: c.method,
+    units_remaining: (c.units !== null && c.units !== undefined && c.units !== '') ? c.units : null,
+    placement: c.placement || null,
+    status_at_checkin: c.status || null,
+    notes: c.notes || null,
+    logged_by: me
+  };
+  try { const {data, error} = await sb.from('check_ins').insert(payload).select().single(); if (error) throw error; setSyncStatus(true); return data; }
+  catch(e) { console.error('insertCheckin', e); setSyncStatus(false); alert('Could not save check-in: '+(e.message||'')); return null; }
+}
+
+async function insertPOInDb(accountId, po) {
+  const payload = {
+    account_id: accountId,
+    cartons: po.cartons,
+    date_confirmed: po.dateConfirmed,
+    ship_address: po.shipAddress || null,
+    notes: po.notes || null,
+    boxes_after_delivery: po.boxesAfterDelivery,
+    logged_by: me
+  };
+  try { const {data, error} = await sb.from('purchase_orders').insert(payload).select().single(); if (error) throw error; setSyncStatus(true); return data; }
+  catch(e) { console.error('insertPO', e); setSyncStatus(false); alert('Could not save order: '+(e.message||'')); return null; }
+}
+
+async function updatePOInDb(poId, patch) {
+  const dbPatch = {};
+  if ('invoiceSentDate' in patch) dbPatch.invoice_sent_date = patch.invoiceSentDate;
+  if ('payStatus' in patch) dbPatch.pay_status = patch.payStatus;
+  if ('payMethod' in patch) dbPatch.pay_method = patch.payMethod;
+  if ('datePaid' in patch) dbPatch.date_paid = patch.datePaid;
+  try { const {error} = await sb.from('purchase_orders').update(dbPatch).eq('id', poId); if (error) throw error; setSyncStatus(true); return true; }
+  catch(e) { console.error('updatePO', e); setSyncStatus(false); alert('Could not update order: '+(e.message||'')); return false; }
+}
+
+// Bump parent account's updated_at so it floats to top after a child change
+async function touchAccount(id) {
+  try { await sb.from('accounts').update({updated_at: new Date().toISOString()}).eq('id', id); } catch(e) {}
+}
+
+// =============================================================
+// DERIVED STATE / HELPERS
+// =============================================================
 
 function getBoxes(a) { return typeof a.boxesOnShelf === 'number' ? a.boxesOnShelf : 0; }
 function isLowStock(a) { return a.status === 'Active' && getBoxes(a) <= 5; }
@@ -414,6 +674,12 @@ function invClass(po) {
   if (!po.invoiceSentDate) return 'unsent';
   return daysSince(po.invoiceSentDate) > 30 ? 'overdue' : 'outstanding';
 }
+
+// =============================================================
+// RENDER
+// =============================================================
+
+function render() { renderMetrics(); renderTable(); renderInvoices(); renderDashboard(); }
 
 function renderMetrics() {
   const total = accounts.length;
@@ -485,11 +751,11 @@ function renderInvoices() {
   if (!filtered.length) { el.innerHTML = '<div class="empty-s">No orders found.</div>'; return; }
   el.innerHTML = filtered.map(({acc, po}) => {
     const cls = invClass(po);
-    const days = po.invoiceSentDate ? daysSince(po.invoiceSentDate) : null;
     const boxes = po.cartons * 20;
     let subParts = [`${po.cartons} carton${po.cartons!==1?'s':''} · ${boxes} boxes`, `Ordered ${fmtShort(po.dateConfirmed)}`];
     if (po.invoiceSentDate) subParts.push(`Invoice sent ${fmtShort(po.invoiceSentDate)}`);
     if (po.payStatus === 'paid') subParts.push(`Paid ${fmtShort(po.datePaid)} via ${po.payMethod}`);
+    if (po.loggedBy) subParts.push(`by ${po.loggedBy}`);
     const actions = [];
     if (po.payStatus !== 'paid') {
       if (!po.invoiceSentDate) actions.push(`<button class="inv-btn green" onclick="markInvoiceSent('${acc.id}','${po.id}',event)">Mark invoice sent</button>`);
@@ -506,41 +772,9 @@ function renderInvoices() {
   }).join('');
 }
 
-function markInvoiceSent(accId, poId, e) {
-  e && e.stopPropagation();
-  const acc = accounts.find(a => a.id === accId); if (!acc) return;
-  const po = (acc.pos||[]).find(p => p.id === poId); if (!po) return;
-  po.invoiceSentDate = new Date().toISOString().split('T')[0];
-  saveAndSync({...acc});
-  renderInvoices();
-}
-
-function openMarkPaid(accId, poId, e) {
-  e && e.stopPropagation();
-  curId = accId; curPOId = poId;
-  document.getElementById('paid-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('paid-method').value = 'Venmo';
-  document.getElementById('m-paid').classList.add('open');
-}
-
-function savePaid() {
-  const acc = accounts.find(a => a.id === curId); if (!acc) return;
-  const po = (acc.pos||[]).find(p => p.id === curPOId); if (!po) return;
-  po.payStatus = 'paid';
-  po.payMethod = document.getElementById('paid-method').value;
-  po.datePaid = document.getElementById('paid-date').value;
-  closeM('m-paid');
-  saveAndSync({...acc});
-  renderInvoices();
-  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
-}
-
 function renderDashboard() {
   const total = accounts.length;
-  const byStatus = {};
-  const byType = {};
-  const byRegion = {};
-  const byRep = {};
+  const byStatus = {}, byType = {}, byRegion = {}, byRep = {};
   let totalBoxes = 0, totalPOs = 0, paidPOs = 0, unpaidPOs = 0, overdueCount = 0;
   accounts.forEach(a => {
     byStatus[a.status] = (byStatus[a.status]||0) + 1;
@@ -597,12 +831,14 @@ function renderDashboard() {
     </div>`;
 }
 
-function render() { renderMetrics(); renderTable(); renderInvoices(); renderDashboard(); }
-
 function showView(v) {
   ['accounts','invoices','dashboard'].forEach(x => document.getElementById('v-'+x).style.display = x===v?'block':'none');
-  document.querySelectorAll('.nb').forEach((b,i) => b.classList.toggle('on', ['accounts','invoices','dashboard'][i]===v));
+  document.querySelectorAll('.nav .nb').forEach((b,i) => b.classList.toggle('on', ['accounts','invoices','dashboard'][i]===v));
 }
+
+// =============================================================
+// MUTATING ACTIONS
+// =============================================================
 
 function openAdd() {
   editId = null;
@@ -638,11 +874,11 @@ function startEdit() {
   document.getElementById('m-add').classList.add('open');
 }
 
-function saveAccount() {
+async function saveAccount() {
   const name = document.getElementById('a-name').value.trim();
   if (!name) { alert('Store name is required'); return; }
   const acc = {
-    id: editId||'a'+Date.now(), name,
+    name,
     type: document.getElementById('a-type').value,
     status: document.getElementById('a-status').value,
     street: document.getElementById('a-street').value,
@@ -657,11 +893,13 @@ function saveAccount() {
     shipAddress: document.getElementById('a-ship').value,
     rep: document.getElementById('a-rep').value,
     dateAdded: document.getElementById('a-date').value,
-    notes: document.getElementById('a-notes').value,
-    checkins: editId ? (accounts.find(a=>a.id===editId)||{}).checkins||[] : [],
-    pos: editId ? (accounts.find(a=>a.id===editId)||{}).pos||[] : []
+    notes: document.getElementById('a-notes').value
   };
-  closeM('m-add'); saveAndSync(acc);
+  closeM('m-add');
+  let saved;
+  if (editId) saved = await updateAccountInDb(editId, accToDbPayload(acc));
+  else saved = await insertAccountInDb(acc);
+  if (saved) { editId = null; await fetchAccounts(); }
 }
 
 function openDetail(id) { curId = id; dTab = 'info'; renderDetail(); document.getElementById('m-detail').classList.add('open'); }
@@ -680,7 +918,7 @@ function renderDetail() {
     </div>
     ${invOD ? `<div class="notice red">Invoice overdue on a recent order.</div>` : ''}
     ${od && !invOD ? `<div class="notice amber">Check-in overdue since ${fmtShort(nextDue(a))}.</div>` : ''}
-    ${low && !od ? `<div class="notice amber">Low stock -- ${boxes} boxes left. Push for a reorder.</div>` : ''}
+    ${low && !od ? `<div class="notice amber">Low stock — ${boxes} boxes left. Push for a reorder.</div>` : ''}
     ${unsent && !invOD ? `<div class="notice amber">An invoice has not been sent yet.</div>` : ''}
     ${dTab === 'info' ? `
       <div class="info-grid">
@@ -706,13 +944,14 @@ function renderDetail() {
         <div class="ci-pills">
           ${c.units!=null ? `<span class="pill${a.status==='Active'&&c.units<=5?' low':''}">${c.units} ${a.status==='Trial'?'sticks':'boxes'} left</span>` : ''}
           ${c.placement ? `<span class="pill">${c.placement}</span>` : ''}
+          ${c.loggedBy ? `<span class="pill who">by ${c.loggedBy}</span>` : ''}
         </div>
       </div>`).join('')}` : ''}
     ` : `
       <div style="margin-bottom:10px"><button class="btn-p" onclick="openPO()">+ Log PO order</button></div>
-      ${pos.length ? [...pos].reverse().map(po => `<div class="po-item">
+      ${pos.length ? pos.map(po => `<div class="po-item">
         <div class="po-top"><div class="po-title">${po.cartons} carton${po.cartons!==1?'s':''} · ${po.cartons*20} boxes</div>${invStatusBadge(po)}</div>
-        <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}</div>
+        <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}${po.loggedBy?' · by '+po.loggedBy:''}</div>
         ${po.shipAddress ? `<div class="po-meta">Ship to: ${po.shipAddress}</div>` : ''}
         <div class="po-actions" style="margin-top:7px">
           ${po.payStatus!=='paid'&&!po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark invoice sent</button>` : ''}
@@ -720,20 +959,6 @@ function renderDetail() {
         </div>
       </div>`).join('') : '<div class="empty-s">No orders yet.</div>'}
     `}`;
-}
-
-function markInvoiceSentDetail(poId) {
-  const acc = accounts.find(a => a.id === curId); if (!acc) return;
-  const po = (acc.pos||[]).find(p => p.id === poId); if (!po) return;
-  po.invoiceSentDate = new Date().toISOString().split('T')[0];
-  saveAndSync({...acc}); renderDetail(); renderInvoices();
-}
-
-function openMarkPaidDetail(poId) {
-  curPOId = poId;
-  document.getElementById('paid-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('paid-method').value = 'Venmo';
-  document.getElementById('m-paid').classList.add('open');
 }
 
 function switchTab(t) { dTab = t; renderDetail(); }
@@ -758,7 +983,7 @@ function openCi() {
   document.getElementById('m-ci').classList.add('open');
 }
 
-function saveCi() {
+async function saveCi() {
   const a = accounts.find(x => x.id === curId); if (!a) return;
   const ns = document.getElementById('ci-status').value;
   const unitsVal = document.getElementById('ci-boxes').value;
@@ -771,11 +996,17 @@ function saveCi() {
     status: ns||a.status,
     notes: document.getElementById('ci-notes').value
   };
-  const updated = {...a, checkins: [ci, ...(a.checkins||[])]};
-  if (ns) updated.status = ns;
-  if (newPlacement) updated.placement = newPlacement;
-  if (units !== null) updated.boxesOnShelf = units;
-  closeM('m-ci'); saveAndSync(updated); curId = updated.id; renderDetail();
+  closeM('m-ci');
+  await insertCheckinInDb(a.id, ci);
+  // Mirror updates onto the account row
+  const accPatch = {};
+  if (ns && ns !== a.status) accPatch.status = ns;
+  if (newPlacement && newPlacement !== a.placement) accPatch.placement = newPlacement;
+  if (units !== null) accPatch.boxes_on_shelf = units;
+  if (Object.keys(accPatch).length > 0) await updateAccountInDb(a.id, accPatch);
+  else await touchAccount(a.id);
+  await fetchAccounts();
+  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
 }
 
 function openPO() {
@@ -797,32 +1028,90 @@ function updatePOCalc() {
   }
 }
 
-function savePO() {
+async function savePO() {
   const a = accounts.find(x => x.id === curId); if (!a) return;
   const cartons = parseInt(document.getElementById('po-cartons').value)||1;
   const current = parseInt(document.getElementById('po-current').value)||0;
   const totalAfter = current + cartons*20;
   const po = {
-    id: 'po'+Date.now(), cartons,
+    cartons,
     dateConfirmed: document.getElementById('po-date').value,
     shipAddress: document.getElementById('po-ship').value,
     notes: document.getElementById('po-notes').value,
-    invoiceSentDate: null, payStatus: 'outstanding', payMethod: null, datePaid: null,
     boxesAfterDelivery: totalAfter
   };
-  const updated = {...a, pos: [...(a.pos||[]), po], boxesOnShelf: totalAfter};
-  if (a.status === 'Trial') updated.status = 'Active';
-  closeM('m-po'); saveAndSync(updated); curId = updated.id; dTab = 'orders'; renderDetail();
+  closeM('m-po');
+  await insertPOInDb(a.id, po);
+  const patch = {boxes_on_shelf: totalAfter};
+  if (a.status === 'Trial') patch.status = 'Active';
+  await updateAccountInDb(a.id, patch);
+  await fetchAccounts();
+  dTab = 'orders';
+  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
+}
+
+async function markInvoiceSent(accId, poId, e) {
+  e && e.stopPropagation();
+  const today = new Date().toISOString().split('T')[0];
+  await updatePOInDb(poId, {invoiceSentDate: today});
+  await touchAccount(accId);
+  await fetchAccounts();
+}
+
+async function markInvoiceSentDetail(poId) {
+  const today = new Date().toISOString().split('T')[0];
+  await updatePOInDb(poId, {invoiceSentDate: today});
+  await touchAccount(curId);
+  await fetchAccounts();
+  renderDetail();
+}
+
+function openMarkPaid(accId, poId, e) {
+  e && e.stopPropagation();
+  curId = accId; curPOId = poId;
+  document.getElementById('paid-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('paid-method').value = 'Venmo';
+  document.getElementById('m-paid').classList.add('open');
+}
+
+function openMarkPaidDetail(poId) {
+  curPOId = poId;
+  document.getElementById('paid-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('paid-method').value = 'Venmo';
+  document.getElementById('m-paid').classList.add('open');
+}
+
+async function savePaid() {
+  const datePaid = document.getElementById('paid-date').value;
+  const payMethod = document.getElementById('paid-method').value;
+  closeM('m-paid');
+  await updatePOInDb(curPOId, {payStatus: 'paid', payMethod, datePaid});
+  await touchAccount(curId);
+  await fetchAccounts();
+  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
 }
 
 function confirmDelete() { document.getElementById('confirm-del').classList.add('open'); }
 function closeConfirm() { document.getElementById('confirm-del').classList.remove('open'); }
 async function deleteAccount() {
   closeConfirm(); closeM('m-detail');
-  accounts = accounts.filter(a => a.id !== curId);
-  render(); await deleteFromDB(curId); curId = null;
+  const id = curId; curId = null;
+  await deleteAccountInDb(id);
+  await fetchAccounts();
 }
+
 function closeM(id) { document.getElementById(id).classList.remove('open'); }
+
+// =============================================================
+// INIT
+// =============================================================
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const id = document.activeElement && document.activeElement.id;
+  if (id === 'login-email') { e.preventDefault(); sendOtp(); }
+  else if (id === 'login-otp') { e.preventDefault(); verifyOtp(); }
+});
 
 window.addEventListener('load', checkAuth);
 </script>
