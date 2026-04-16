@@ -1,77 +1,75 @@
 # day-guard CRM — Supabase setup
 
-One-time setup for Felix. ~10 minutes total.
+One-time setup for Felix. ~10 minutes total. This is what's already been done for the current project (`wldertprtchjlllvrxya`) — keep as reference if you ever need to rebuild from scratch.
 
 ## 1. Run the schema
 
-1. Open the Supabase dashboard for project `wldertprtchjlllvrxya`.
+1. Open the Supabase dashboard for the project.
 2. Left sidebar → **SQL Editor** → **New query**.
 3. Open `schema.sql` from this repo, copy all of it, paste into the editor.
 4. Click **Run** (bottom right, or Cmd+Enter).
 5. Left sidebar → **Database** → **Tables** → confirm you see 3 tables: `accounts`, `check_ins`, `purchase_orders`.
 
-If the old `accounts` (single-blob) table existed, `schema.sql` drops it. Confirmed empty before writing this.
-
 ## 2. Configure Auth
 
 1. **Authentication** → **Providers** → **Email**.
 2. Ensure **Enable Email provider** is **on**.
-3. Scroll down — **Confirm email** can stay on (OTP flow still works).
-4. **Enable Email Signups** — turn **OFF**. This prevents random emails from self-registering. Only you can add users.
-5. Save.
+3. **Enable Email Signups** — turn **OFF**. This prevents anyone who knows the URL from creating a new account.
+4. Save.
 
-## 3. Add users
+## 3. Add the team user
 
-**Authentication** → **Users** → **Add user** → **Create new user**. Add these:
+**Authentication** → **Users** → **Add user** → **Create new user**.
 
-| Email | Auto Confirm User |
-|---|---|
-| `team@dayguard.com` | ✅ yes |
-| (optional) `felix@dayguard.com` or your personal email | ✅ yes |
+| Email | Password | Auto Confirm User |
+|---|---|---|
+| `team@dayguard.com` | `Teamdayguard26` | ✅ yes |
 
-You don't set passwords — they'll sign in with one-time codes sent to the email.
+This is the single shared account Wyatt, Kaedin, and Felix all use. Both the email and the password are the team's shared credentials — exactly like the old CRM flow, but now backed by real Supabase auth so Row Level Security actually protects the database.
 
 ## 4. Configure redirect URLs
 
 **Authentication** → **URL Configuration**:
 
 - **Site URL**: `https://dayguard-wholesale-crm.vercel.app`
-- **Redirect URLs** (add each): 
-  - `https://dayguard-wholesale-crm.vercel.app`
-  - `https://dayguard-wholesale-crm.vercel.app/*`
-  - `http://localhost:*` *(for local testing)*
-
-OTP codes don't strictly require this since there's no redirect, but it's good hygiene.
+- **Redirect URLs**:
+  - `https://dayguard-wholesale-crm.vercel.app/**`
+  - `http://localhost:**` *(for local testing)*
 
 ## 5. Test the login
 
-Once `index.html` is updated (next step in my plan), go to the deployed site and sign in with `team@dayguard.com`. You'll get a 6-digit code by email.
+On the deployed site, enter the team password. You should land on the main CRM screen. Session persists for 30 days by default.
 
 ---
 
-## Adding / removing users later
+## Changing the team password later
 
-**To add someone:** Authentication → Users → Add user.
+If someone leaves the team, rotate the password so their saved session on their old device can be killed.
 
-**To remove someone:** Authentication → Users → click the user → Delete. Their session dies on next page load.
+**Easiest path: from inside the app.**
 
-**To add a new rep** (e.g. someone besides Wyatt / Kaedin / Felix): you need to update the CHECK constraint in two places in the DB — run this in SQL Editor:
+1. Sign in on a trusted device.
+2. Open browser devtools → Console, paste:
+   ```js
+   await sb.auth.updateUser({ password: 'NewPasswordHere' })
+   ```
+3. Tell the team the new password. Their existing sessions stay valid until they sign out, but the old password won't work for new sign-ins.
+
+**Alternative: via Supabase dashboard.**
+
+Authentication → Users → click the `team@dayguard.com` row → "Send password recovery email" (this sends a recovery link to `team@dayguard.com` — whoever has access to that inbox can set a new one).
+
+## Adding / removing rep names
+
+The `rep` field on each account is constrained to `Wyatt`, `Kaedin`, `Felix`. To add a new rep name (e.g., a new hire), run this in SQL Editor:
 
 ```sql
 ALTER TABLE public.accounts DROP CONSTRAINT accounts_rep_check;
 ALTER TABLE public.accounts ADD CONSTRAINT accounts_rep_check
   CHECK (rep IN ('Wyatt','Kaedin','Felix','NewPerson'));
-
-ALTER TABLE public.check_ins DROP CONSTRAINT check_ins_logged_by_check;
-ALTER TABLE public.check_ins ADD CONSTRAINT check_ins_logged_by_check
-  CHECK (logged_by IN ('Wyatt','Kaedin','Felix','NewPerson'));
-
-ALTER TABLE public.purchase_orders DROP CONSTRAINT purchase_orders_logged_by_check;
-ALTER TABLE public.purchase_orders ADD CONSTRAINT purchase_orders_logged_by_check
-  CHECK (logged_by IN ('Wyatt','Kaedin','Felix','NewPerson'));
 ```
 
-And add the option in `index.html` (rep dropdown + name picker list).
+And add the option in `index.html` (rep dropdown in the Add Account form).
 
 ## The schema at a glance
 
@@ -86,15 +84,15 @@ region         text [check]   units_remaining    int     date_confirmed       da
 rep            text [check]   placement          text    ship_address         text
 street/city/   text           status_at_checkin  text    invoice_sent_date    date
   state/zip                   notes              text    pay_status           text [check]
-contact        text           logged_by          text    pay_method           text [check]
-phone          text           created_at         ts      date_paid            date
+contact        text           created_at         ts      pay_method           text [check]
+phone          text                                      date_paid            date
 ship_address   text                                      boxes_after_delivery int
 placement      text                                      notes                text
-boxes_on_shelf int                                       logged_by            text
-notes          text                                      created_at           ts
+boxes_on_shelf int                                       created_at           ts
+notes          text
 date_added     date
 created_at     ts
 updated_at     ts  (auto)
 ```
 
-All three tables are behind Row Level Security: authenticated users can read and write anything; anonymous users can't do anything.
+All three tables are behind Row Level Security: authenticated users read/write everything, anonymous requests get rejected. The publishable Supabase key lives in `index.html` (safe — it's designed for client-side use). The team password is what actually gates access.

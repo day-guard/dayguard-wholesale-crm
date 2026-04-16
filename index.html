@@ -14,19 +14,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .login-sub b{color:#1a1a1a;font-weight:500}
 .login-box input{width:100%;padding:10px 12px;font-size:14px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-family:inherit;text-align:center;margin-bottom:10px}
 .login-box input:focus{outline:none;border-color:#1D9E75}
-.login-box input.otp{font-size:22px;letter-spacing:6px;font-weight:500}
-.login-btn{width:100%;padding:10px;font-size:13px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500;margin-bottom:8px}
+.login-btn{width:100%;padding:10px;font-size:13px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500}
 .login-btn:hover{opacity:.92}
 .login-btn:disabled{opacity:.5;cursor:not-allowed}
-.login-btn.ghost{background:transparent;color:#666;border:0.5px solid rgba(0,0,0,0.15)}
-.login-btn.name{background:#fff;color:#1a1a1a;border:0.5px solid rgba(0,0,0,0.15)}
-.login-btn.name:hover{background:#f5f5f3}
 .login-err{font-size:12px;color:#A32D2D;margin-top:8px;display:none}
-.login-info{font-size:11px;color:#1D9E75;margin-top:6px;display:none}
 .app-screen{display:none}
 .topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
 .brand{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}.brand em{color:#1D9E75;font-style:normal}
-.me-pill{font-size:11px;color:#0F6E56;background:#E1F5EE;border-radius:20px;padding:2px 9px;font-weight:500}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block}
 .sync-dot.ok{background:#1D9E75}.sync-dot.err{background:#E24B4A}
 .nav{display:flex;gap:3px}
@@ -94,7 +88,6 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 .ci-pills{display:flex;flex-wrap:wrap;gap:4px}
 .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#f0f0ee;color:#666}
 .pill.low{background:#FAEEDA;color:#633806}
-.pill.who{background:#E1F5EE;color:#0F6E56}
 .empty-s{text-align:center;padding:24px;color:#999;font-size:12px}
 .notice{border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12px}
 .notice.amber{background:#FAEEDA;color:#633806}
@@ -153,45 +146,21 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 </head>
 <body>
 
-<!-- Login Step 1: email -->
-<div class="login-screen" id="login-email-screen" style="display:none">
+<!-- Login screen -->
+<div class="login-screen" id="login-screen" style="display:none">
   <div class="login-box">
     <div class="login-logo"><em>day–guard</em></div>
     <div class="login-sub">retail crm · team access only</div>
-    <input type="email" id="login-email" placeholder="team@dayguard.com" autocomplete="email" autocapitalize="none">
-    <button class="login-btn" id="send-otp-btn" onclick="sendOtp()">Send login code</button>
-    <div class="login-err" id="login-email-err"></div>
-  </div>
-</div>
-
-<!-- Login Step 2: OTP -->
-<div class="login-screen" id="login-otp-screen" style="display:none">
-  <div class="login-box">
-    <div class="login-logo"><em>day–guard</em></div>
-    <div class="login-sub">Code sent to <b id="otp-email"></b><br>Check the team inbox.</div>
-    <input type="text" id="login-otp" class="otp" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code">
-    <button class="login-btn" id="verify-otp-btn" onclick="verifyOtp()">Verify and sign in</button>
-    <button class="login-btn ghost" onclick="resetLogin()">Use a different email</button>
-    <div class="login-err" id="login-otp-err"></div>
-    <div class="login-info" id="login-otp-info">Code resent.</div>
-  </div>
-</div>
-
-<!-- Name picker -->
-<div class="login-screen" id="name-picker-screen" style="display:none">
-  <div class="login-box">
-    <div class="login-logo"><em>day–guard</em></div>
-    <div class="login-sub">Who's using the app?</div>
-    <button class="login-btn name" onclick="setName('Wyatt')">Wyatt</button>
-    <button class="login-btn name" onclick="setName('Kaedin')">Kaedin</button>
-    <button class="login-btn name" onclick="setName('Felix')">Felix</button>
+    <input type="password" id="login-password" placeholder="Team password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-err" id="login-err"></div>
   </div>
 </div>
 
 <!-- App -->
 <div class="app-screen" id="app-screen">
 <div class="topbar">
-  <div class="brand"><em>day–guard</em> retail crm <span class="me-pill" id="me-pill"></span> <span class="sync-dot" id="sync-dot"></span></div>
+  <div class="brand"><em>day–guard</em> retail crm <span class="sync-dot" id="sync-dot"></span></div>
   <div class="nav">
     <button class="nb on" onclick="showView('accounts')">Accounts</button>
     <button class="nb" onclick="showView('invoices')">Invoices</button>
@@ -356,125 +325,67 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 <script>
 const SB_URL = 'https://wldertprtchjlllvrxya.supabase.co';
 const SB_KEY = 'sb_publishable_G-13jlOcfzaU-TSRHZ_jPg_DEMjRTtj';
+const TEAM_EMAIL = 'team@dayguard.com';
 const sb = supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true, storage: localStorage}});
-const VALID_REPS = ['Wyatt','Kaedin','Felix'];
 
 let accounts = [], curId = null, editId = null, dTab = 'info', invFilter = 'all', curPOId = null;
-let me = null;          // 'Wyatt' / 'Kaedin' / 'Felix' — name picker
-let pendingEmail = '';  // email used in OTP flow
 
 // =============================================================
-// AUTH
+// AUTH — shared password against team@dayguard.com Supabase user
 // =============================================================
-
-async function checkAuth() {
-  try {
-    const {data:{session}} = await sb.auth.getSession();
-    if (session) { afterAuth(); }
-    else { showLoginEmail(); }
-  } catch(e) { showLoginEmail(); }
-}
-
-function showLoginEmail() {
-  hideAllScreens();
-  document.getElementById('login-email-screen').style.display = 'flex';
-  setTimeout(() => document.getElementById('login-email').focus(), 50);
-}
 
 function hideAllScreens() {
-  ['login-email-screen','login-otp-screen','name-picker-screen','app-screen'].forEach(id => {
+  ['login-screen','app-screen'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
 }
 
-async function sendOtp() {
-  const email = document.getElementById('login-email').value.trim().toLowerCase();
-  const err = document.getElementById('login-email-err');
-  err.style.display = 'none';
-  if (!email || !email.includes('@')) {
-    err.textContent = 'Enter a valid email address';
-    err.style.display = 'block';
-    return;
-  }
-  const btn = document.getElementById('send-otp-btn');
-  btn.disabled = true; btn.textContent = 'Sending code...';
-  try {
-    const {error} = await sb.auth.signInWithOtp({email, options: {shouldCreateUser: false}});
-    if (error) throw error;
-    pendingEmail = email;
-    document.getElementById('otp-email').textContent = email;
-    hideAllScreens();
-    document.getElementById('login-otp-screen').style.display = 'flex';
-    setTimeout(() => document.getElementById('login-otp').focus(), 50);
-  } catch(e) {
-    err.textContent = (e.message && /not allowed|signup/i.test(e.message))
-      ? 'This email is not on the team list. Ask Felix to add it in Supabase.'
-      : (e.message || 'Could not send code. Try again.');
-    err.style.display = 'block';
-  } finally {
-    btn.disabled = false; btn.textContent = 'Send login code';
-  }
-}
-
-async function verifyOtp() {
-  const token = document.getElementById('login-otp').value.trim();
-  const err = document.getElementById('login-otp-err');
-  err.style.display = 'none';
-  if (!token || token.length < 6) {
-    err.textContent = 'Enter the 6-digit code from your email';
-    err.style.display = 'block';
-    return;
-  }
-  const btn = document.getElementById('verify-otp-btn');
-  btn.disabled = true; btn.textContent = 'Verifying...';
-  try {
-    const {error} = await sb.auth.verifyOtp({email: pendingEmail, token, type: 'email'});
-    if (error) throw error;
-    afterAuth();
-  } catch(e) {
-    err.textContent = e.message || 'Invalid or expired code. Send a new one.';
-    err.style.display = 'block';
-  } finally {
-    btn.disabled = false; btn.textContent = 'Verify and sign in';
-  }
-}
-
-function resetLogin() {
-  document.getElementById('login-otp').value = '';
-  document.getElementById('login-otp-err').style.display = 'none';
-  document.getElementById('login-otp-info').style.display = 'none';
-  pendingEmail = '';
-  showLoginEmail();
-}
-
-function afterAuth() {
-  const savedName = localStorage.getItem('dg_user_name');
-  if (savedName && VALID_REPS.includes(savedName)) {
-    me = savedName;
-    showApp();
-  } else {
-    hideAllScreens();
-    document.getElementById('name-picker-screen').style.display = 'flex';
-  }
-}
-
-function setName(name) {
-  if (!VALID_REPS.includes(name)) return;
-  me = name;
-  localStorage.setItem('dg_user_name', name);
-  showApp();
+function showLogin() {
+  hideAllScreens();
+  document.getElementById('login-screen').style.display = 'flex';
+  setTimeout(() => document.getElementById('login-password').focus(), 50);
 }
 
 function showApp() {
   hideAllScreens();
   document.getElementById('app-screen').style.display = 'block';
-  document.getElementById('me-pill').textContent = me;
   fetchAccounts();
+}
+
+async function checkAuth() {
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    if (session) showApp();
+    else showLogin();
+  } catch(e) { showLogin(); }
+}
+
+async function doLogin() {
+  const password = document.getElementById('login-password').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!password) {
+    err.textContent = 'Enter the team password';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const {error} = await sb.auth.signInWithPassword({email: TEAM_EMAIL, password});
+    if (error) throw error;
+    document.getElementById('login-password').value = '';
+    showApp();
+  } catch(e) {
+    err.textContent = /invalid login credentials/i.test(e.message||'') ? 'Wrong password.' : (e.message || 'Could not sign in.');
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
 }
 
 async function signOut() {
   try { await sb.auth.signOut(); } catch(e) {}
-  // Keep dg_user_name so the same browser remembers Wyatt vs Kaedin next time
   location.reload();
 }
 
@@ -515,8 +426,7 @@ function dbToAcc(row) {
       units: c.units_remaining,
       placement: c.placement||'',
       status: c.status_at_checkin,
-      notes: c.notes||'',
-      loggedBy: c.logged_by
+      notes: c.notes||''
     })).sort((a,b) => (a.date < b.date ? 1 : -1)),
     pos: (row.purchase_orders||[]).map(p => ({
       id: p.id,
@@ -528,8 +438,7 @@ function dbToAcc(row) {
       payStatus: p.pay_status,
       payMethod: p.pay_method,
       datePaid: p.date_paid,
-      boxesAfterDelivery: p.boxes_after_delivery,
-      loggedBy: p.logged_by
+      boxesAfterDelivery: p.boxes_after_delivery
     })).sort((a,b) => (a.dateConfirmed < b.dateConfirmed ? 1 : -1))
   };
 }
@@ -601,8 +510,7 @@ async function insertCheckinInDb(accountId, c) {
     units_remaining: (c.units !== null && c.units !== undefined && c.units !== '') ? c.units : null,
     placement: c.placement || null,
     status_at_checkin: c.status || null,
-    notes: c.notes || null,
-    logged_by: me
+    notes: c.notes || null
   };
   try { const {data, error} = await sb.from('check_ins').insert(payload).select().single(); if (error) throw error; setSyncStatus(true); return data; }
   catch(e) { console.error('insertCheckin', e); setSyncStatus(false); alert('Could not save check-in: '+(e.message||'')); return null; }
@@ -615,8 +523,7 @@ async function insertPOInDb(accountId, po) {
     date_confirmed: po.dateConfirmed,
     ship_address: po.shipAddress || null,
     notes: po.notes || null,
-    boxes_after_delivery: po.boxesAfterDelivery,
-    logged_by: me
+    boxes_after_delivery: po.boxesAfterDelivery
   };
   try { const {data, error} = await sb.from('purchase_orders').insert(payload).select().single(); if (error) throw error; setSyncStatus(true); return data; }
   catch(e) { console.error('insertPO', e); setSyncStatus(false); alert('Could not save order: '+(e.message||'')); return null; }
@@ -755,7 +662,6 @@ function renderInvoices() {
     let subParts = [`${po.cartons} carton${po.cartons!==1?'s':''} · ${boxes} boxes`, `Ordered ${fmtShort(po.dateConfirmed)}`];
     if (po.invoiceSentDate) subParts.push(`Invoice sent ${fmtShort(po.invoiceSentDate)}`);
     if (po.payStatus === 'paid') subParts.push(`Paid ${fmtShort(po.datePaid)} via ${po.payMethod}`);
-    if (po.loggedBy) subParts.push(`by ${po.loggedBy}`);
     const actions = [];
     if (po.payStatus !== 'paid') {
       if (!po.invoiceSentDate) actions.push(`<button class="inv-btn green" onclick="markInvoiceSent('${acc.id}','${po.id}',event)">Mark invoice sent</button>`);
@@ -944,14 +850,13 @@ function renderDetail() {
         <div class="ci-pills">
           ${c.units!=null ? `<span class="pill${a.status==='Active'&&c.units<=5?' low':''}">${c.units} ${a.status==='Trial'?'sticks':'boxes'} left</span>` : ''}
           ${c.placement ? `<span class="pill">${c.placement}</span>` : ''}
-          ${c.loggedBy ? `<span class="pill who">by ${c.loggedBy}</span>` : ''}
         </div>
       </div>`).join('')}` : ''}
     ` : `
       <div style="margin-bottom:10px"><button class="btn-p" onclick="openPO()">+ Log PO order</button></div>
       ${pos.length ? pos.map(po => `<div class="po-item">
         <div class="po-top"><div class="po-title">${po.cartons} carton${po.cartons!==1?'s':''} · ${po.cartons*20} boxes</div>${invStatusBadge(po)}</div>
-        <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}${po.loggedBy?' · by '+po.loggedBy:''}</div>
+        <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}</div>
         ${po.shipAddress ? `<div class="po-meta">Ship to: ${po.shipAddress}</div>` : ''}
         <div class="po-actions" style="margin-top:7px">
           ${po.payStatus!=='paid'&&!po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark invoice sent</button>` : ''}
@@ -1105,13 +1010,6 @@ function closeM(id) { document.getElementById(id).classList.remove('open'); }
 // =============================================================
 // INIT
 // =============================================================
-
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
-  const id = document.activeElement && document.activeElement.id;
-  if (id === 'login-email') { e.preventDefault(); sendOtp(); }
-  else if (id === 'login-otp') { e.preventDefault(); verifyOtp(); }
-});
 
 window.addEventListener('load', checkAuth);
 </script>

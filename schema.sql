@@ -59,8 +59,6 @@ CREATE TABLE public.check_ins (
   status_at_checkin TEXT
                     CHECK (status_at_checkin IN ('Not Visited','Trial','Active','Dead')),
   notes             TEXT,
-  logged_by         TEXT
-                    CHECK (logged_by IN ('Wyatt','Kaedin','Felix')),
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -85,8 +83,6 @@ CREATE TABLE public.purchase_orders (
   date_paid            DATE,
   boxes_after_delivery INT CHECK (boxes_after_delivery IS NULL OR boxes_after_delivery >= 0),
   notes                TEXT,
-  logged_by            TEXT
-                       CHECK (logged_by IN ('Wyatt','Kaedin','Felix')),
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   -- Business rule: if pay_status='paid' we must know method and date
   CONSTRAINT paid_has_method_and_date CHECK (
