@@ -267,26 +267,18 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
         <div id="ci-boxes-hint" style="font-size:11px;color:#666;margin-top:3px"></div>
       </div>
       <div class="f ff"><label>Notes</label><textarea id="ci-notes" placeholder="What happened? Any feedback?"></textarea></div>
-      <div class="f ff" id="ci-dead-wrap" style="display:none">
-        <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
-          <input type="checkbox" id="ci-mark-dead" style="width:auto;margin:0">
-          <span>They no longer want to carry day-guard - mark as Dead</span>
-        </label>
-        <div style="font-size:11px;color:#666;margin-top:3px">All check-ins, orders, and notes will be kept for the record.</div>
-      </div>
       <div class="f ff" id="ci-outcome-wrap" style="display:none">
         <label style="margin-bottom:6px">How did it go?</label>
         <div style="display:grid;grid-template-columns:1fr;gap:6px">
-          <button type="button" class="btn-p" style="padding:10px;font-size:13px" onclick="saveCiOutcome('trial')">✅ Yes to trial - they paid for the box</button>
-          <button type="button" class="btn-s" style="padding:10px;font-size:13px" onclick="saveCiOutcome('later')">🤔 Will get back to us - check in next week</button>
-          <button type="button" class="btn-del" style="padding:10px;font-size:13px" onclick="saveCiOutcome('dead')">❌ Said no - mark as Dead</button>
+          <button type="button" class="btn-p" id="ci-out-yes" style="padding:10px;font-size:13px"></button>
+          <button type="button" class="btn-s" id="ci-out-later" style="padding:10px;font-size:13px"></button>
+          <button type="button" class="btn-del" id="ci-out-dead" style="padding:10px;font-size:13px"></button>
         </div>
       </div>
       <div class="f ff" id="ci-date-wrap" style="display:none"><label>Date of check-in</label><input id="ci-date" type="date"></div>
     </div></div>
-    <div class="mf">
+    <div class="mf" style="justify-content:flex-end">
       <button class="btn-s" onclick="closeM('m-ci')">Cancel</button>
-      <button class="btn-p" id="ci-save-btn" onclick="saveCi()">Save check-in</button>
     </div>
   </div>
 </div>
@@ -350,10 +342,6 @@ const LOW_STOCK_THRESHOLD = 5;
 
 let accounts = [], curId = null, editId = null, dTab = 'info', invFilter = 'all';
 let curPOId = null;
-// Delete confirmation context: {type: 'account'|'checkin', id}
-let pendingDelete = null;
-// Check-in edit context
-let editingCiId = null;
 
 // =============================================================
 // AUTH
@@ -818,14 +806,16 @@ function renderDetail() {
   const low = isLowStock(a), od = isOD(a), invOD = hasOverdueInv(a), unsent = hasUnsentInv(a);
   const checkins = a.checkins||[];
   const pos = a.pos||[];
+  const isDead = a.status === 'Dead';
   document.getElementById('d-body').innerHTML = `
     <div class="dtabs">
       <button class="dtab${dTab==='info'?' on':''}" onclick="switchTab('info')">Info</button>
       <button class="dtab${dTab==='orders'?' on':''}" onclick="switchTab('orders')">Orders (${pos.length})</button>
     </div>
+    ${isDead ? `<div class="notice red">This account is Dead. No new check-ins or orders can be logged. To revert, delete the most recent check-in.</div>` : ''}
     ${invOD ? `<div class="notice red">Invoice overdue on a recent order.</div>` : ''}
-    ${od && !invOD ? `<div class="notice amber">Check-in overdue since ${fmtShort(nextDue(a))}.</div>` : ''}
-    ${low && !od ? `<div class="notice amber">Low stock - ${boxesLabel(boxes)} left. Push for a reorder.</div>` : ''}
+    ${od && !invOD && !isDead ? `<div class="notice amber">Check-in overdue since ${fmtShort(nextDue(a))}.</div>` : ''}
+    ${low && !od && !isDead ? `<div class="notice amber">Low stock - ${boxesLabel(boxes)} left. Push for a reorder.</div>` : ''}
     ${unsent && !invOD ? `<div class="notice amber">An invoice has not been sent yet.</div>` : ''}
     ${dTab === 'info' ? `
       <div class="info-grid">
@@ -837,24 +827,21 @@ function renderDetail() {
         <div class="info-item" style="grid-column:1/-1"><div class="il">Contact</div><div class="iv">${a.contact||'—'}${a.phone?' · '+a.phone:''}</div></div>
       </div>
       ${a.notes ? `<div style="font-size:12px;color:#666;background:#f5f5f3;padding:9px 11px;border-radius:8px;margin-bottom:12px">${a.notes}</div>` : ''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      ${!isDead ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
         <button class="btn-p" onclick="openCi()">+ Log check-in</button>
-        <button class="btn-s" onclick="openPO()">+ Log PO order</button>
-      </div>
+      </div>` : ''}
       ${checkins.length ? `<div style="font-size:11px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Check-in history</div>
       ${checkins.map(c => `<div class="ci-item">
-        <div class="ci-date">${fmtShort(c.date)} · ${c.method}</div>
+        <div class="ci-date">${fmtShort(c.date)} · ${c.method}${c.status && c.status !== 'Pre-trial' ? ' · '+badge(c.status) : ''}</div>
         ${c.notes ? `<div class="ci-note">${c.notes}</div>` : ''}
         <div class="ci-pills">
           ${c.boxes!=null ? `<span class="pill${a.status==='Active'&&c.boxes<=LOW_STOCK_THRESHOLD?' low':''}">${boxesLabel(c.boxes)} left</span>` : ''}
         </div>
         <div class="ci-actions">
-          <button class="ci-act" onclick="editCi('${c.id}')">Edit</button>
-          <button class="ci-act del" onclick="askDeleteCi('${c.id}')">Delete</button>
+          <button class="ci-act del" onclick="askDeleteCi('${c.id}')">Delete &amp; roll back</button>
         </div>
       </div>`).join('')}` : ''}
     ` : `
-      <div style="margin-bottom:10px"><button class="btn-p" onclick="openPO()">+ Log PO order</button></div>
       ${pos.length ? pos.map(po => `<div class="po-item">
         <div class="po-top"><div class="po-title">${po.cartons} carton${po.cartons!==1?'s':''} · ${po.cartons*20} boxes</div>${invStatusBadge(po)}</div>
         <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}</div>
@@ -870,150 +857,104 @@ function renderDetail() {
 // CHECK-IN (add + edit + delete)
 // =============================================================
 
+function configureOutcomeButtons(status) {
+  const yes = document.getElementById('ci-out-yes');
+  const later = document.getElementById('ci-out-later');
+  const dead = document.getElementById('ci-out-dead');
+  if (status === 'Pre-trial') {
+    yes.innerText = '✅ Yes to trial - they paid for the box';
+    yes.onclick = () => saveCiOutcome('trial');
+    later.innerText = '🤔 Will get back to us - check in next week';
+    later.onclick = () => saveCiOutcome('later');
+    dead.innerText = '❌ Said no - mark as Dead';
+    dead.onclick = () => saveCiOutcome('dead');
+  } else {
+    // Trial or Active
+    yes.innerText = '✅ Yes to PO - they want to order';
+    yes.onclick = () => saveCiOutcome('po');
+    later.innerText = '📝 No change - just log the check-in';
+    later.onclick = () => saveCiOutcome('later');
+    dead.innerText = '❌ No longer carry - mark as Dead';
+    dead.onclick = () => saveCiOutcome('dead');
+  }
+}
+
 function openCi() {
-  editingCiId = null;
   const a = accounts.find(x => x.id === curId); if (!a) return;
+  if (a.status === 'Dead') return; // locked
   document.getElementById('m-ci-title').textContent = a.status === 'Pre-trial' ? 'Log first visit' : 'Log check-in';
   document.getElementById('ci-method').value = a.status === 'Pre-trial' ? 'In person' : 'Phone call';
   document.getElementById('ci-notes').value = '';
-  document.getElementById('ci-date-wrap').style.display = 'none';
-  document.getElementById('ci-mark-dead').checked = false;
 
   const boxesWrap = document.getElementById('ci-boxes-wrap');
   const boxesInput = document.getElementById('ci-boxes');
   const hint = document.getElementById('ci-boxes-hint');
-  const deadWrap = document.getElementById('ci-dead-wrap');
-  const outcomeWrap = document.getElementById('ci-outcome-wrap');
-  const saveBtn = document.getElementById('ci-save-btn');
 
   if (a.status === 'Pre-trial') {
-    // First visit: show 3 outcome buttons. No boxes input. No "Mark as Dead" checkbox
-    // (one of the buttons IS "Said no"). No save button (the buttons save).
     boxesWrap.style.display = 'none';
     boxesInput.value = '';
-    deadWrap.style.display = 'none';
-    outcomeWrap.style.display = 'block';
-    saveBtn.style.display = 'none';
-  } else if (a.status === 'Dead') {
-    // Logging an after-the-fact note on a Dead account. No box change, no status change.
-    boxesWrap.style.display = 'none';
-    boxesInput.value = '';
-    deadWrap.style.display = 'none';
-    outcomeWrap.style.display = 'none';
-    saveBtn.style.display = '';
-    saveBtn.textContent = 'Save check-in';
+    hint.textContent = '';
   } else {
-    // Trial or Active: standard check-in. Boxes input + Mark as Dead checkbox + Save button.
     boxesWrap.style.display = 'block';
     boxesInput.value = getBoxes(a);
     hint.textContent = a.status === 'Trial'
       ? 'Ask how many sticks are left, round to nearest box (15+=2, 5-14=1, 0-4=0).'
       : 'Round to whole boxes.';
-    deadWrap.style.display = 'block';
-    outcomeWrap.style.display = 'none';
-    saveBtn.style.display = '';
-    saveBtn.textContent = 'Save check-in';
   }
+  configureOutcomeButtons(a.status);
+  document.getElementById('ci-outcome-wrap').style.display = 'block';
   document.getElementById('m-ci').classList.add('open');
 }
 
-function editCi(id) {
-  const a = accounts.find(x => x.id === curId); if (!a) return;
-  const c = (a.checkins||[]).find(x => x.id === id); if (!c) return;
-  editingCiId = id;
-  document.getElementById('m-ci-title').textContent = 'Edit check-in';
-  const saveBtn = document.getElementById('ci-save-btn');
-  saveBtn.style.display = '';
-  saveBtn.textContent = 'Save changes';
-  document.getElementById('ci-method').value = c.method || 'Phone call';
-  document.getElementById('ci-notes').value = c.notes || '';
-  document.getElementById('ci-date-wrap').style.display = 'block';
-  document.getElementById('ci-date').value = c.date;
-  const boxesWrap = document.getElementById('ci-boxes-wrap');
-  const boxesInput = document.getElementById('ci-boxes');
-  boxesWrap.style.display = 'block';
-  boxesInput.value = (c.boxes !== null && c.boxes !== undefined) ? c.boxes : '';
-  document.getElementById('ci-boxes-hint').textContent = 'Round to whole boxes.';
-  // Edit never triggers status change. Hide outcome buttons and Dead checkbox.
-  document.getElementById('ci-outcome-wrap').style.display = 'none';
-  document.getElementById('ci-dead-wrap').style.display = 'none';
-  document.getElementById('ci-mark-dead').checked = false;
-  document.getElementById('m-ci').classList.add('open');
-}
-
-async function saveCi() {
-  const a = accounts.find(x => x.id === curId); if (!a) return;
-  const method = document.getElementById('ci-method').value;
-  const notes = document.getElementById('ci-notes').value.trim();
-
-  if (editingCiId) {
-    // Edit existing
-    const boxesVal = document.getElementById('ci-boxes').value;
-    const boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
-    const date = document.getElementById('ci-date').value;
-    closeM('m-ci');
-    await updateCheckinInDb(editingCiId, {method, boxes, notes, date});
-    // If the most recent check-in changed, reflect the boxes on the account
-    const updatedCheckins = [...(a.checkins||[])].sort((x,y)=> x.date<y.date?1:-1);
-    if (updatedCheckins[0] && updatedCheckins[0].id === editingCiId && boxes !== null) {
-      await updateAccountInDb(a.id, {boxes_on_shelf: boxes});
-    } else {
-      await touchAccount(a.id);
-    }
-    editingCiId = null;
-    await fetchAccounts();
-    renderDetail();
-    return;
-  }
-
-  // New check-in (Trial / Active / Dead). Pre-trial uses saveCiOutcome instead.
-  const markDead = document.getElementById('ci-mark-dead').checked;
-  const boxesVal = document.getElementById('ci-boxes').value;
-  const boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
-  let accPatch = {};
-  if (markDead) {
-    // Trial or Active account being closed out. Status → Dead. Don't change boxes.
-    accPatch.status = 'Dead';
-  } else if (boxes !== null && a.status !== 'Dead') {
-    accPatch.boxes_on_shelf = boxes;
-  }
-  const ci = {
-    date: new Date().toISOString().split('T')[0],
-    method, boxes,
-    status: accPatch.status || a.status,
-    notes
-  };
-  closeM('m-ci');
-  await insertCheckinInDb(a.id, ci);
-  if (Object.keys(accPatch).length > 0) await updateAccountInDb(a.id, accPatch);
-  else await touchAccount(a.id);
-  await fetchAccounts();
-  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
-}
-
-// Pre-trial check-in: outcome is one of 'trial', 'later', 'dead'.
+// Outcome:
+//   Pre-trial    -> 'trial' | 'later' | 'dead'
+//   Trial/Active -> 'po'    | 'later' | 'dead'
 async function saveCiOutcome(outcome) {
   const a = accounts.find(x => x.id === curId); if (!a) return;
-  if (a.status !== 'Pre-trial') return; // safety
+  if (a.status === 'Dead') return;
+
+  // Dead action needs confirmation.
+  if (outcome === 'dead') {
+    showConfirm(
+      'Mark this account as Dead?',
+      'The account will be locked. If this was a mistake, delete the check-in afterwards to revert.',
+      () => _performCiOutcome(a.id, outcome),
+      'Yes, mark as Dead'
+    );
+    return;
+  }
+  await _performCiOutcome(a.id, outcome);
+}
+
+async function _performCiOutcome(accountId, outcome) {
+  const a = accounts.find(x => x.id === accountId); if (!a) return;
   const method = document.getElementById('ci-method').value;
   const notes = document.getElementById('ci-notes').value.trim();
+  const boxesVal = document.getElementById('ci-boxes').value;
+  const boxes = (a.status !== 'Pre-trial' && boxesVal !== '')
+    ? parseInt(boxesVal)
+    : (outcome === 'trial' ? TRIAL_START_BOXES : null);
+
   let accPatch = {};
-  let newStatus = 'Pre-trial';
-  let boxes = null;
+  let checkinStatus = a.status;
+
   if (outcome === 'trial') {
-    newStatus = 'Trial';
-    boxes = TRIAL_START_BOXES;
     accPatch.status = 'Trial';
     accPatch.boxes_on_shelf = TRIAL_START_BOXES;
+    checkinStatus = 'Trial';
   } else if (outcome === 'dead') {
-    newStatus = 'Dead';
     accPatch.status = 'Dead';
+    checkinStatus = 'Dead';
+  } else if (outcome === 'later') {
+    if (boxes !== null) accPatch.boxes_on_shelf = boxes;
+  } else if (outcome === 'po') {
+    if (boxes !== null) accPatch.boxes_on_shelf = boxes;
   }
-  // 'later' = no status change, just record the check-in.
+
   const ci = {
     date: new Date().toISOString().split('T')[0],
     method, boxes,
-    status: newStatus,
+    status: checkinStatus,
     notes
   };
   closeM('m-ci');
@@ -1021,37 +962,69 @@ async function saveCiOutcome(outcome) {
   if (Object.keys(accPatch).length > 0) await updateAccountInDb(a.id, accPatch);
   else await touchAccount(a.id);
   await fetchAccounts();
-  if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
+
+  if (outcome === 'po') {
+    // Open PO modal immediately - saving the PO will promote status to Active
+    // and bump boxes_on_shelf.
+    openPO();
+  } else if (document.getElementById('m-detail').classList.contains('open')) {
+    renderDetail();
+  }
 }
 
-function askDeleteCi(id) {
-  pendingDelete = {type: 'checkin', id};
-  document.getElementById('confirm-del-title').textContent = 'Delete this check-in?';
-  document.getElementById('confirm-del-sub').textContent = 'This cannot be undone.';
+// Generic confirm. Provide a callback instead of a type enum.
+let pendingConfirmFn = null;
+function showConfirm(title, sub, fn, btnText) {
+  document.getElementById('confirm-del-title').textContent = title;
+  document.getElementById('confirm-del-sub').textContent = sub;
+  const btn = document.getElementById('confirm-del-btn');
+  btn.textContent = btnText || 'Yes, delete';
+  pendingConfirmFn = fn;
   document.getElementById('confirm-del').classList.add('open');
 }
 
 async function doConfirmedDelete() {
-  const pd = pendingDelete;
+  const fn = pendingConfirmFn;
+  pendingConfirmFn = null;
   closeConfirm();
-  if (!pd) return;
-  if (pd.type === 'account') {
-    closeM('m-detail');
-    const id = pd.id;
-    curId = null;
-    await deleteAccountInDb(id);
-    await fetchAccounts();
-  } else if (pd.type === 'checkin') {
-    await deleteCheckinInDb(pd.id);
-    // Don't modify boxes_on_shelf on delete. Current count reflects the
-    // most recent event (check-in or PO). Deleting history shouldn't
-    // rewrite current state. If the user needs to correct the count,
-    // they log a fresh check-in.
-    await touchAccount(curId);
-    await fetchAccounts();
-    renderDetail();
-  }
-  pendingDelete = null;
+  if (fn) await fn();
+}
+
+function askDeleteCi(id) {
+  showConfirm(
+    'Delete this check-in?',
+    'The account will roll back to the state before this check-in (status, boxes, etc). If this check-in created the Dead status, the account will become active again.',
+    () => doDeleteCheckinWithRollback(id),
+    'Yes, delete & roll back'
+  );
+}
+
+async function doDeleteCheckinWithRollback(id) {
+  await deleteCheckinInDb(id);
+  await recomputeAccountFromEvents(curId);
+  await fetchAccounts();
+  renderDetail();
+}
+
+// Recompute status + boxes_on_shelf from the current set of check-ins + POs.
+async function recomputeAccountFromEvents(accountId) {
+  try {
+    const {data: row, error} = await sb.from('accounts')
+      .select('id, check_ins(id,created_at,status_at_checkin,units_remaining), purchase_orders(id,created_at,boxes_after_delivery)')
+      .eq('id', accountId).single();
+    if (error || !row) return;
+    const events = [
+      ...(row.check_ins||[]).map(c => ({at: c.created_at, status: c.status_at_checkin, boxes: c.units_remaining})),
+      ...(row.purchase_orders||[]).map(p => ({at: p.created_at, status: 'Active', boxes: p.boxes_after_delivery}))
+    ].sort((x,y) => (x.at > y.at ? -1 : 1));
+    let newStatus = 'Pre-trial', newBoxes = 0;
+    if (events.length > 0) {
+      const latest = events[0];
+      if (latest.status) newStatus = latest.status;
+      if (latest.boxes != null) newBoxes = latest.boxes;
+    }
+    await updateAccountInDb(accountId, {status: newStatus, boxes_on_shelf: newBoxes});
+  } catch(e) { console.error('recompute', e); }
 }
 
 // =============================================================
@@ -1145,12 +1118,20 @@ async function savePaid() {
 // =============================================================
 
 function confirmDelete() {
-  pendingDelete = {type: 'account', id: curId};
-  document.getElementById('confirm-del-title').textContent = 'Delete this account?';
-  document.getElementById('confirm-del-sub').textContent = 'This also deletes all check-ins and orders for this account. Cannot be undone.';
-  document.getElementById('confirm-del').classList.add('open');
+  const id = curId;
+  showConfirm(
+    'Delete this account?',
+    'This also deletes all check-ins and orders for this account. Cannot be undone.',
+    async () => {
+      closeM('m-detail');
+      curId = null;
+      await deleteAccountInDb(id);
+      await fetchAccounts();
+    },
+    'Yes, delete'
+  );
 }
-function closeConfirm() { document.getElementById('confirm-del').classList.remove('open'); pendingDelete = null; }
+function closeConfirm() { document.getElementById('confirm-del').classList.remove('open'); pendingConfirmFn = null; }
 
 // =============================================================
 // MISC
