@@ -226,7 +226,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <div class="f"><label>State <span class="req">*</span></label><input id="a-state" placeholder="NY" maxlength="2"></div>
       <div class="f"><label>Zip <span class="req">*</span></label><input id="a-zip" placeholder="10001" maxlength="10"></div>
       <div class="f"><label>Assigned rep <span class="req">*</span></label><select id="a-rep"><option>Wyatt</option><option>Kaedin</option><option>Felix</option></select></div>
-      <div class="sec-label">Contact (optional)</div>
+      <div class="sec-label">Post visit</div>
       <div class="f"><label>Decision maker name</label><input id="a-contact" placeholder="Decision maker"></div>
       <div class="f"><label>Phone</label><input id="a-phone" placeholder="(212) 555-0100"></div>
       <div class="f ff"><label>Notes</label><textarea id="a-notes" placeholder="Anything relevant..."></textarea></div>
@@ -267,6 +267,13 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
         <div id="ci-boxes-hint" style="font-size:11px;color:#666;margin-top:3px"></div>
       </div>
       <div class="f ff"><label>Notes</label><textarea id="ci-notes" placeholder="What happened? Any feedback?"></textarea></div>
+      <div class="f ff" id="ci-dead-wrap" style="display:none">
+        <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+          <input type="checkbox" id="ci-mark-dead" style="width:auto;margin:0">
+          <span>Mark this account as Dead (they said no)</span>
+        </label>
+        <div style="font-size:11px;color:#666;margin-top:3px">All check-ins, orders, and notes will be kept for the record.</div>
+      </div>
       <div class="f ff" id="ci-date-wrap" style="display:none"><label>Date of check-in</label><input id="ci-date" type="date"></div>
     </div></div>
     <div class="mf">
@@ -719,12 +726,28 @@ function openAdd() {
   ['a-name','a-street','a-city','a-zip','a-contact','a-phone','a-notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('a-state').value = '';
   document.getElementById('a-type').value = 'Bar';
-  document.getElementById('a-status').value = 'Not Visited';
+  // On create, allow any starting status.
+  rebuildStatusDropdown('Not Visited');
   document.getElementById('a-rep').value = 'Wyatt';
   document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('a-boxes-wrap').style.display = 'none';
   document.getElementById('m-add').classList.add('open');
   setTimeout(() => document.getElementById('a-name').focus(), 60);
+}
+
+// Status transitions allowed from each state. Forward-only after Active,
+// with a "reopen" path from Dead → Not Visited as a safety valve.
+const STATUS_TRANSITIONS = {
+  'Not Visited': ['Not Visited','Trial','Active','Dead'],
+  'Trial':       ['Trial','Active','Dead'],
+  'Active':      ['Active','Dead'],
+  'Dead':        ['Dead','Not Visited']
+};
+
+function rebuildStatusDropdown(currentStatus) {
+  const sel = document.getElementById('a-status');
+  const allowed = STATUS_TRANSITIONS[currentStatus] || ['Not Visited','Trial','Active','Dead'];
+  sel.innerHTML = allowed.map(s => `<option${s===currentStatus?' selected':''}>${s}</option>`).join('');
 }
 
 function startEdit() {
@@ -733,7 +756,7 @@ function startEdit() {
   document.getElementById('m-add-title').textContent = 'Edit account';
   document.getElementById('a-name').value = a.name||'';
   document.getElementById('a-type').value = a.type||'Bar';
-  document.getElementById('a-status').value = a.status||'Not Visited';
+  rebuildStatusDropdown(a.status||'Not Visited');
   document.getElementById('a-street').value = a.street||'';
   document.getElementById('a-city').value = a.city||'';
   document.getElementById('a-state').value = a.state||'';
@@ -866,6 +889,7 @@ function openCi() {
   document.getElementById('ci-method').value = a.status === 'Not Visited' ? 'In person' : 'Phone call';
   document.getElementById('ci-notes').value = '';
   document.getElementById('ci-date-wrap').style.display = 'none';
+  document.getElementById('ci-mark-dead').checked = false;
   const boxesWrap = document.getElementById('ci-boxes-wrap');
   const boxesInput = document.getElementById('ci-boxes');
   const hint = document.getElementById('ci-boxes-hint');
@@ -880,6 +904,8 @@ function openCi() {
       ? 'Ask how many sticks are left, round to nearest box (15+=2, 5-14=1, 0-4=0).'
       : 'Round to whole boxes.';
   }
+  // Show "Mark as Dead" except when account is already Dead.
+  document.getElementById('ci-dead-wrap').style.display = a.status === 'Dead' ? 'none' : 'block';
   document.getElementById('m-ci').classList.add('open');
 }
 
@@ -898,6 +924,9 @@ function editCi(id) {
   boxesWrap.style.display = 'block';
   boxesInput.value = (c.boxes !== null && c.boxes !== undefined) ? c.boxes : '';
   document.getElementById('ci-boxes-hint').textContent = 'Round to whole boxes.';
+  // Hide the Dead checkbox on edit — status changes happen via new check-ins or the edit account form.
+  document.getElementById('ci-dead-wrap').style.display = 'none';
+  document.getElementById('ci-mark-dead').checked = false;
   document.getElementById('m-ci').classList.add('open');
 }
 
@@ -927,9 +956,16 @@ async function saveCi() {
   }
 
   // New check-in
+  const markDead = document.getElementById('ci-mark-dead').checked;
   let boxes;
   let accPatch = {};
-  if (a.status === 'Not Visited') {
+  if (markDead) {
+    // "They said no" - flip status to Dead. Don't auto-promote. Don't change boxes.
+    accPatch.status = 'Dead';
+    const boxesVal = document.getElementById('ci-boxes').value;
+    boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
+    // Don't update boxes_on_shelf - account is dead, count doesn't matter.
+  } else if (a.status === 'Not Visited') {
     // First visit logged. Auto-promote to Trial, set boxes to 2.
     boxes = TRIAL_START_BOXES;
     accPatch.status = 'Trial';
