@@ -11,7 +11,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .login-box{background:#fff;border-radius:16px;border:0.5px solid rgba(0,0,0,0.1);padding:36px 32px;width:100%;max-width:340px;text-align:center}
 .login-logo{font-size:18px;font-weight:500;margin-bottom:6px}.login-logo em{color:#1D9E75;font-style:normal}
 .login-sub{font-size:12px;color:#999;margin-bottom:20px}
-.login-sub b{color:#1a1a1a;font-weight:500}
 .login-box input{width:100%;padding:10px 12px;font-size:14px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-family:inherit;text-align:center;margin-bottom:10px}
 .login-box input:focus{outline:none;border-color:#1D9E75}
 .login-btn{width:100%;padding:10px;font-size:13px;border-radius:8px;border:none;cursor:pointer;background:#1D9E75;color:#fff;font-family:inherit;font-weight:500}
@@ -69,9 +68,12 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 .ff{grid-column:1/-1}
 .f{display:flex;flex-direction:column;gap:3px}
 .f label{font-size:11px;color:#666;font-weight:500}
+.f label .req{color:#A32D2D;margin-left:2px}
 .f input,.f select,.f textarea{font-size:12px;padding:6px 9px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;color:#1a1a1a;font-family:inherit;width:100%}
 .f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:#1D9E75}
+.f input:invalid:not(:placeholder-shown){border-color:#E24B4A}
 .f textarea{resize:vertical;min-height:50px}
+.f .readonly{padding:6px 9px;font-size:12px;background:#f5f5f3;border-radius:8px;color:#666}
 .sec-label{font-size:10px;font-weight:500;color:#999;letter-spacing:.05em;text-transform:uppercase;grid-column:1/-1;margin-top:4px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08)}
 .calc-hint{font-size:11px;color:#1D9E75;padding:3px 0;grid-column:1/-1}
 .mf{padding:11px 15px;border-top:0.5px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center}
@@ -82,10 +84,15 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 .dtabs{display:flex;border-bottom:0.5px solid rgba(0,0,0,0.1);margin-bottom:12px}
 .dtab{padding:7px 13px;font-size:12px;cursor:pointer;border:none;border-bottom:2px solid transparent;color:#666;background:none;font-family:inherit}
 .dtab.on{color:#1D9E75;border-bottom-color:#1D9E75;font-weight:500}
-.ci-item{padding:9px 11px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.08);margin-bottom:6px;background:#fafafa}
+.ci-item{padding:9px 11px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.08);margin-bottom:6px;background:#fafafa;position:relative}
 .ci-date{font-size:11px;color:#666;margin-bottom:3px}
 .ci-note{font-size:12px;margin-bottom:4px}
 .ci-pills{display:flex;flex-wrap:wrap;gap:4px}
+.ci-actions{display:flex;gap:5px;margin-top:6px}
+.ci-act{padding:3px 8px;font-size:10px;border-radius:5px;border:0.5px solid rgba(0,0,0,0.15);cursor:pointer;background:#fff;color:#666;font-family:inherit}
+.ci-act:hover{background:#f0f0ee;color:#1a1a1a}
+.ci-act.del{color:#A32D2D;border-color:rgba(226,75,74,0.25)}
+.ci-act.del:hover{background:#FCEBEB}
 .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#f0f0ee;color:#666}
 .pill.low{background:#FAEEDA;color:#633806}
 .empty-s{text-align:center;padding:24px;color:#999;font-size:12px}
@@ -146,7 +153,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 </head>
 <body>
 
-<!-- Login screen -->
+<!-- Login -->
 <div class="login-screen" id="login-screen" style="display:none">
   <div class="login-box">
     <div class="login-logo"><em>day–guard</em></div>
@@ -180,12 +187,11 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <input type="text" id="srch" placeholder="Search by store name..." oninput="renderTable()">
       <select id="fSt" onchange="renderTable()"><option value="">All statuses</option><option>Not Visited</option><option>Trial</option><option>Active</option><option>Dead</option></select>
       <select id="fTy" onchange="renderTable()"><option value="">All types</option><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select>
-      <select id="fRg" onchange="renderTable()"><option value="">All regions</option><option>NYC</option><option>Boston</option><option>Providence</option><option>New Jersey</option></select>
       <select id="fRp" onchange="renderTable()"><option value="">All reps</option><option>Wyatt</option><option>Kaedin</option><option>Felix</option></select>
     </div>
     <div class="tw"><table>
-      <thead><tr><th>Store</th><th>Type</th><th>Region</th><th>Status</th><th>Rep</th><th>Units left</th><th>Last check-in</th><th>Alert</th></tr></thead>
-      <tbody id="tbody"><tr><td colspan="8" class="empty-s">Loading...</td></tr></tbody>
+      <thead><tr><th>Store</th><th>Type</th><th>Status</th><th>Rep</th><th>Boxes left</th><th>Last check-in</th><th>Alert</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="7" class="empty-s">Loading...</td></tr></tbody>
     </table></div>
   </div>
 
@@ -211,25 +217,21 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   <div class="modal">
     <div class="mh"><h2 id="m-add-title">Add account</h2><button class="xbtn" onclick="closeM('m-add')">×</button></div>
     <div class="mb"><div class="fg">
-      <div class="f ff"><label>Store name *</label><input id="a-name" placeholder="e.g. Murphy's Bar"></div>
-      <div class="f"><label>Store type</label><select id="a-type"><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select></div>
-      <div class="f"><label>Status</label><select id="a-status"><option>Not Visited</option><option>Trial</option><option>Active</option><option>Dead</option></select></div>
-      <div class="sec-label">Address</div>
-      <div class="f ff"><label>Street address</label><input id="a-street" placeholder="123 Main St"></div>
-      <div class="f"><label>City</label><input id="a-city" placeholder="New York"></div>
-      <div class="f"><label>State</label><input id="a-state" placeholder="NY" maxlength="2"></div>
-      <div class="f"><label>Zip</label><input id="a-zip" placeholder="10001" maxlength="10"></div>
-      <div class="f"><label>Region</label><select id="a-region"><option>NYC</option><option>Boston</option><option>Providence</option><option>New Jersey</option></select></div>
-      <div class="sec-label">Product</div>
-      <div class="f ff"><label>Placement in store</label><select id="a-placement"><option value="">Not placed yet</option><option>Backbar</option><option>Counter Display</option><option>Eye Level Shelf</option><option>Lower Shelf</option><option>Cooler / Fridge</option><option>Fridge Mount</option><option>Other</option></select></div>
-      <div class="f"><label>Units currently on shelf</label><input id="a-boxes" type="number" placeholder="0" min="0"></div>
-      <div class="sec-label">Contact</div>
-      <div class="f"><label>Contact name</label><input id="a-contact" placeholder="Decision maker"></div>
+      <div class="sec-label" style="margin-top:0;padding-top:0;border-top:none">Required</div>
+      <div class="f ff"><label>Store name <span class="req">*</span></label><input id="a-name" placeholder="e.g. Murphy's Bar"></div>
+      <div class="f"><label>Store type <span class="req">*</span></label><select id="a-type"><option>Bar</option><option>Liquor store</option><option>Convenience</option><option>Grocery</option><option>Restaurant</option><option>Wholesale</option><option>Other</option></select></div>
+      <div class="f"><label>Status <span class="req">*</span></label><select id="a-status" onchange="onStatusChange()"><option>Not Visited</option><option>Trial</option><option>Active</option><option>Dead</option></select></div>
+      <div class="f ff"><label>Street address <span class="req">*</span></label><input id="a-street" placeholder="123 Main St"></div>
+      <div class="f"><label>City <span class="req">*</span></label><input id="a-city" placeholder="New York"></div>
+      <div class="f"><label>State <span class="req">*</span></label><input id="a-state" placeholder="NY" maxlength="2"></div>
+      <div class="f"><label>Zip <span class="req">*</span></label><input id="a-zip" placeholder="10001" maxlength="10"></div>
+      <div class="f"><label>Assigned rep <span class="req">*</span></label><select id="a-rep"><option>Wyatt</option><option>Kaedin</option><option>Felix</option></select></div>
+      <div class="sec-label">Contact (optional)</div>
+      <div class="f"><label>Decision maker name</label><input id="a-contact" placeholder="Decision maker"></div>
       <div class="f"><label>Phone</label><input id="a-phone" placeholder="(212) 555-0100"></div>
-      <div class="f ff"><label>Shipping address (if different from store)</label><input id="a-ship" placeholder="Leave blank if same"></div>
-      <div class="f"><label>Assigned rep</label><select id="a-rep"><option>Wyatt</option><option>Kaedin</option><option>Felix</option></select></div>
-      <div class="f"><label>Date added</label><input id="a-date" type="date"></div>
       <div class="f ff"><label>Notes</label><textarea id="a-notes" placeholder="Anything relevant..."></textarea></div>
+      <div class="f"><label>Date added</label><input id="a-date" type="date"></div>
+      <div class="f" id="a-boxes-wrap" style="display:none"><label>Boxes currently on shelf</label><div class="readonly" id="a-boxes-readonly">—</div></div>
     </div></div>
     <div class="mf">
       <button class="btn-s" onclick="closeM('m-add')">Cancel</button>
@@ -253,24 +255,23 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   </div>
 </div>
 
-<!-- Check-in Modal -->
+<!-- Check-in Modal (add + edit) -->
 <div class="modal-bg" id="m-ci">
   <div class="modal" style="max-width:400px">
-    <div class="mh"><h2>Log check-in</h2><button class="xbtn" onclick="closeM('m-ci')">×</button></div>
+    <div class="mh"><h2 id="m-ci-title">Log check-in</h2><button class="xbtn" onclick="closeM('m-ci')">×</button></div>
     <div class="mb"><div class="fg">
       <div class="f ff"><label>Contact method</label><select id="ci-method"><option>Phone call</option><option>In person</option><option>Text</option><option>Email</option></select></div>
-      <div class="f ff" id="ci-units-wrap" style="display:none">
-        <label id="ci-units-label">Units remaining</label>
+      <div class="f ff" id="ci-boxes-wrap">
+        <label>Boxes remaining on shelf</label>
         <input id="ci-boxes" type="number" placeholder="0" min="0">
-        <div id="ci-units-hint" style="font-size:11px;color:#666;margin-top:3px"></div>
+        <div id="ci-boxes-hint" style="font-size:11px;color:#666;margin-top:3px"></div>
       </div>
-      <div class="f ff"><label>Product placement</label><select id="ci-placement"><option value="">No change</option><option>Backbar</option><option>Counter Display</option><option>Eye Level Shelf</option><option>Lower Shelf</option><option>Cooler / Fridge</option><option>Fridge Mount</option><option>Other</option></select></div>
-      <div class="f ff"><label>Update status</label><select id="ci-status"><option value="">No change</option><option>Not Visited</option><option>Trial</option><option>Active</option><option>Dead</option></select></div>
       <div class="f ff"><label>Notes</label><textarea id="ci-notes" placeholder="What happened? Any feedback?"></textarea></div>
+      <div class="f ff" id="ci-date-wrap" style="display:none"><label>Date of check-in</label><input id="ci-date" type="date"></div>
     </div></div>
     <div class="mf">
       <button class="btn-s" onclick="closeM('m-ci')">Cancel</button>
-      <button class="btn-p" onclick="saveCi()">Save check-in</button>
+      <button class="btn-p" id="ci-save-btn" onclick="saveCi()">Save check-in</button>
     </div>
   </div>
 </div>
@@ -284,7 +285,6 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
       <div class="f ff"><label>Boxes currently on shelf</label><input id="po-current" type="number" placeholder="0" min="0" oninput="updatePOCalc()"></div>
       <div id="po-calc" class="calc-hint"></div>
       <div class="f ff"><label>Date order confirmed</label><input id="po-date" type="date"></div>
-      <div class="f ff"><label>Shipping address</label><input id="po-ship" placeholder="Confirm delivery address"></div>
       <div class="f ff"><label>Notes</label><textarea id="po-notes" placeholder="Any details about this order..."></textarea></div>
     </div></div>
     <div class="mf">
@@ -312,11 +312,11 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 <!-- Delete Confirm -->
 <div class="confirm-overlay" id="confirm-del">
   <div class="confirm-box">
-    <p>Delete this account?</p>
-    <small>This also deletes all check-ins and orders for this account. Cannot be undone.</small>
+    <p id="confirm-del-title">Delete this account?</p>
+    <small id="confirm-del-sub">This also deletes all check-ins and orders for this account. Cannot be undone.</small>
     <div class="confirm-btns">
       <button class="btn-s" onclick="closeConfirm()">Cancel</button>
-      <button class="btn-del" onclick="deleteAccount()">Yes, delete</button>
+      <button class="btn-del" id="confirm-del-btn" onclick="doConfirmedDelete()">Yes, delete</button>
     </div>
   </div>
 </div>
@@ -328,47 +328,46 @@ const SB_KEY = 'sb_publishable_G-13jlOcfzaU-TSRHZ_jPg_DEMjRTtj';
 const TEAM_EMAIL = 'team@dayguard.com';
 const sb = supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true, storage: localStorage}});
 
-let accounts = [], curId = null, editId = null, dTab = 'info', invFilter = 'all', curPOId = null;
+// Trial starts with this many boxes (2 boxes dropped during first visit).
+const TRIAL_START_BOXES = 2;
+// Active accounts with this many or fewer boxes get the low-stock flag.
+const LOW_STOCK_THRESHOLD = 5;
+
+let accounts = [], curId = null, editId = null, dTab = 'info', invFilter = 'all';
+let curPOId = null;
+// Delete confirmation context: {type: 'account'|'checkin', id}
+let pendingDelete = null;
+// Check-in edit context
+let editingCiId = null;
 
 // =============================================================
-// AUTH — shared password against team@dayguard.com Supabase user
+// AUTH
 // =============================================================
 
 function hideAllScreens() {
-  ['login-screen','app-screen'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
-  });
+  ['login-screen','app-screen'].forEach(id => document.getElementById(id).style.display = 'none');
 }
-
 function showLogin() {
   hideAllScreens();
   document.getElementById('login-screen').style.display = 'flex';
   setTimeout(() => document.getElementById('login-password').focus(), 50);
 }
-
 function showApp() {
   hideAllScreens();
   document.getElementById('app-screen').style.display = 'block';
   fetchAccounts();
 }
-
 async function checkAuth() {
   try {
     const {data:{session}} = await sb.auth.getSession();
-    if (session) showApp();
-    else showLogin();
+    if (session) showApp(); else showLogin();
   } catch(e) { showLogin(); }
 }
-
 async function doLogin() {
   const password = document.getElementById('login-password').value;
   const err = document.getElementById('login-err');
   err.style.display = 'none';
-  if (!password) {
-    err.textContent = 'Enter the team password';
-    err.style.display = 'block';
-    return;
-  }
+  if (!password) { err.textContent = 'Enter the team password'; err.style.display = 'block'; return; }
   const btn = document.getElementById('login-btn');
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
@@ -379,65 +378,38 @@ async function doLogin() {
   } catch(e) {
     err.textContent = /invalid login credentials/i.test(e.message||'') ? 'Wrong password.' : (e.message || 'Could not sign in.');
     err.style.display = 'block';
-  } finally {
-    btn.disabled = false; btn.textContent = 'Sign in';
-  }
+  } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
 }
-
-async function signOut() {
-  try { await sb.auth.signOut(); } catch(e) {}
-  location.reload();
-}
+async function signOut() { try { await sb.auth.signOut(); } catch(e) {} location.reload(); }
 
 // =============================================================
-// DATA LAYER — 3 tables (accounts / check_ins / purchase_orders)
+// DATA LAYER
 // =============================================================
 
 function setSyncStatus(ok) {
-  const d = document.getElementById('sync-dot');
-  d.className = 'sync-dot ' + (ok ? 'ok' : 'err');
+  document.getElementById('sync-dot').className = 'sync-dot ' + (ok ? 'ok' : 'err');
 }
 
-// Map a DB account row (with nested check_ins, purchase_orders) to in-memory shape
 function dbToAcc(row) {
   return {
     id: row.id,
-    name: row.name,
-    type: row.type,
-    status: row.status,
-    region: row.region,
-    rep: row.rep,
-    street: row.street||'',
-    city: row.city||'',
-    state: row.state||'',
-    zip: row.zip||'',
-    contact: row.contact||'',
-    phone: row.phone||'',
-    shipAddress: row.ship_address||'',
-    placement: row.placement||'',
+    name: row.name, type: row.type, status: row.status, rep: row.rep,
+    street: row.street||'', city: row.city||'', state: row.state||'', zip: row.zip||'',
+    contact: row.contact||'', phone: row.phone||'',
     boxesOnShelf: row.boxes_on_shelf||0,
     notes: row.notes||'',
     dateAdded: row.date_added,
     updated_at: row.updated_at,
     checkins: (row.check_ins||[]).map(c => ({
-      id: c.id,
-      date: c.date,
-      method: c.method,
-      units: c.units_remaining,
-      placement: c.placement||'',
-      status: c.status_at_checkin,
-      notes: c.notes||''
+      id: c.id, date: c.date, method: c.method,
+      boxes: c.units_remaining, // column is historically named units_remaining
+      status: c.status_at_checkin, notes: c.notes||''
     })).sort((a,b) => (a.date < b.date ? 1 : -1)),
     pos: (row.purchase_orders||[]).map(p => ({
-      id: p.id,
-      cartons: p.cartons,
-      dateConfirmed: p.date_confirmed,
-      shipAddress: p.ship_address||'',
-      notes: p.notes||'',
+      id: p.id, cartons: p.cartons,
+      dateConfirmed: p.date_confirmed, notes: p.notes||'',
       invoiceSentDate: p.invoice_sent_date,
-      payStatus: p.pay_status,
-      payMethod: p.pay_method,
-      datePaid: p.date_paid,
+      payStatus: p.pay_status, payMethod: p.pay_method, datePaid: p.date_paid,
       boxesAfterDelivery: p.boxes_after_delivery
     })).sort((a,b) => (a.dateConfirmed < b.dateConfirmed ? 1 : -1))
   };
@@ -456,25 +428,15 @@ async function fetchAccounts() {
     console.error('fetchAccounts', e);
     setSyncStatus(false);
     document.getElementById('tbody').innerHTML =
-      `<tr><td colspan="8" class="empty-s">Could not load. ${e.message||''}</td></tr>`;
+      `<tr><td colspan="7" class="empty-s">Could not load. ${e.message||''}</td></tr>`;
   }
 }
 
 function accToDbPayload(a) {
   return {
-    name: a.name,
-    type: a.type,
-    status: a.status,
-    region: a.region,
-    rep: a.rep,
-    street: a.street||null,
-    city: a.city||null,
-    state: a.state||null,
-    zip: a.zip||null,
-    contact: a.contact||null,
-    phone: a.phone||null,
-    ship_address: a.shipAddress||null,
-    placement: a.placement||null,
+    name: a.name, type: a.type, status: a.status, rep: a.rep,
+    street: a.street||null, city: a.city||null, state: a.state||null, zip: a.zip||null,
+    contact: a.contact||null, phone: a.phone||null,
     boxes_on_shelf: a.boxesOnShelf||0,
     notes: a.notes||null,
     date_added: a.dateAdded || new Date().toISOString().split('T')[0]
@@ -488,7 +450,6 @@ async function insertAccountInDb(a) {
     setSyncStatus(true); return data;
   } catch(e) { console.error('insertAccount', e); setSyncStatus(false); alert('Could not save: '+(e.message||'')); return null; }
 }
-
 async function updateAccountInDb(id, patch) {
   try {
     const {data, error} = await sb.from('accounts').update(patch).eq('id', id).select().single();
@@ -496,39 +457,44 @@ async function updateAccountInDb(id, patch) {
     setSyncStatus(true); return data;
   } catch(e) { console.error('updateAccount', e); setSyncStatus(false); alert('Could not save: '+(e.message||'')); return null; }
 }
-
 async function deleteAccountInDb(id) {
   try { const {error} = await sb.from('accounts').delete().eq('id', id); if (error) throw error; setSyncStatus(true); }
   catch(e) { console.error('deleteAccount', e); setSyncStatus(false); }
 }
-
 async function insertCheckinInDb(accountId, c) {
   const payload = {
     account_id: accountId,
     date: c.date,
     method: c.method,
-    units_remaining: (c.units !== null && c.units !== undefined && c.units !== '') ? c.units : null,
-    placement: c.placement || null,
+    units_remaining: (c.boxes !== null && c.boxes !== undefined && c.boxes !== '') ? c.boxes : null,
     status_at_checkin: c.status || null,
     notes: c.notes || null
   };
   try { const {data, error} = await sb.from('check_ins').insert(payload).select().single(); if (error) throw error; setSyncStatus(true); return data; }
   catch(e) { console.error('insertCheckin', e); setSyncStatus(false); alert('Could not save check-in: '+(e.message||'')); return null; }
 }
-
+async function updateCheckinInDb(id, patch) {
+  const dbPatch = {};
+  if ('boxes' in patch) dbPatch.units_remaining = patch.boxes;
+  if ('method' in patch) dbPatch.method = patch.method;
+  if ('notes' in patch) dbPatch.notes = patch.notes;
+  if ('date' in patch) dbPatch.date = patch.date;
+  try { const {error} = await sb.from('check_ins').update(dbPatch).eq('id', id); if (error) throw error; setSyncStatus(true); return true; }
+  catch(e) { console.error('updateCheckin', e); setSyncStatus(false); alert('Could not update check-in: '+(e.message||'')); return false; }
+}
+async function deleteCheckinInDb(id) {
+  try { const {error} = await sb.from('check_ins').delete().eq('id', id); if (error) throw error; setSyncStatus(true); return true; }
+  catch(e) { console.error('deleteCheckin', e); setSyncStatus(false); return false; }
+}
 async function insertPOInDb(accountId, po) {
   const payload = {
-    account_id: accountId,
-    cartons: po.cartons,
-    date_confirmed: po.dateConfirmed,
-    ship_address: po.shipAddress || null,
-    notes: po.notes || null,
+    account_id: accountId, cartons: po.cartons,
+    date_confirmed: po.dateConfirmed, notes: po.notes || null,
     boxes_after_delivery: po.boxesAfterDelivery
   };
   try { const {data, error} = await sb.from('purchase_orders').insert(payload).select().single(); if (error) throw error; setSyncStatus(true); return data; }
   catch(e) { console.error('insertPO', e); setSyncStatus(false); alert('Could not save order: '+(e.message||'')); return null; }
 }
-
 async function updatePOInDb(poId, patch) {
   const dbPatch = {};
   if ('invoiceSentDate' in patch) dbPatch.invoice_sent_date = patch.invoiceSentDate;
@@ -538,8 +504,6 @@ async function updatePOInDb(poId, patch) {
   try { const {error} = await sb.from('purchase_orders').update(dbPatch).eq('id', poId); if (error) throw error; setSyncStatus(true); return true; }
   catch(e) { console.error('updatePO', e); setSyncStatus(false); alert('Could not update order: '+(e.message||'')); return false; }
 }
-
-// Bump parent account's updated_at so it floats to top after a child change
 async function touchAccount(id) {
   try { await sb.from('accounts').update({updated_at: new Date().toISOString()}).eq('id', id); } catch(e) {}
 }
@@ -549,7 +513,8 @@ async function touchAccount(id) {
 // =============================================================
 
 function getBoxes(a) { return typeof a.boxesOnShelf === 'number' ? a.boxesOnShelf : 0; }
-function isLowStock(a) { return a.status === 'Active' && getBoxes(a) <= 5; }
+function boxesLabel(n) { return n + ' ' + (n === 1 ? 'box' : 'boxes'); }
+function isLowStock(a) { return a.status === 'Active' && getBoxes(a) <= LOW_STOCK_THRESHOLD; }
 function hasOverdueInv(a) { return (a.pos||[]).some(po => po.payStatus !== 'paid' && po.invoiceSentDate && daysSince(po.invoiceSentDate) > 30); }
 function hasUnsentInv(a) { return (a.pos||[]).some(po => po.payStatus !== 'paid' && !po.invoiceSentDate); }
 function nextDue(a) {
@@ -567,7 +532,6 @@ function badge(s) {
   const m = {'Not Visited':'s-notvisited','Trial':'s-trial','Active':'s-active','Dead':'s-dead'};
   return `<span class="badge ${m[s]||'s-notvisited'}">${s}</span>`;
 }
-
 function invStatusBadge(po) {
   if (po.payStatus === 'paid') return `<span class="badge s-active">Paid</span>`;
   if (!po.invoiceSentDate) return `<span class="badge s-notvisited">Invoice not sent</span>`;
@@ -575,7 +539,6 @@ function invStatusBadge(po) {
   if (days > 30) return `<span class="badge flag-od">Overdue ${days}d</span>`;
   return `<span class="badge s-trial">Outstanding ${days}d</span>`;
 }
-
 function invClass(po) {
   if (po.payStatus === 'paid') return 'paid';
   if (!po.invoiceSentDate) return 'unsent';
@@ -599,7 +562,7 @@ function renderMetrics() {
   document.getElementById('metrics').innerHTML = `
     <div class="mcard"><div class="mlabel">Total accounts</div><div class="mval">${total}</div><div class="msub">${trial} trial · ${active} active</div></div>
     <div class="mcard"><div class="mlabel">Active accounts</div><div class="mval">${active}</div><div class="msub">${Math.round(active/Math.max(total,1)*100)}% conversion rate</div></div>
-    <div class="mcard${low?' amber':''}"><div class="mlabel">Low stock</div><div class="mval">${low}</div><div class="msub">Active accounts · 5 boxes or fewer</div></div>
+    <div class="mcard${low?' amber':''}"><div class="mlabel">Low stock</div><div class="mval">${low}</div><div class="msub">Active · ${LOW_STOCK_THRESHOLD} boxes or fewer</div></div>
     <div class="mcard${invAlert?' warn':''} clickable" onclick="showView('invoices')"><div class="mlabel">Invoice alerts</div><div class="mval">${invAlert}</div><div class="msub">${overdue} overdue · ${unsent} not sent</div></div>`;
 }
 
@@ -607,12 +570,10 @@ function renderTable() {
   const srch = document.getElementById('srch').value.toLowerCase();
   const fSt = document.getElementById('fSt').value;
   const fTy = document.getElementById('fTy').value;
-  const fRg = document.getElementById('fRg').value;
   const fRp = document.getElementById('fRp').value;
   let list = accounts.filter(a => {
     if (fSt && a.status !== fSt) return false;
     if (fTy && a.type !== fTy) return false;
-    if (fRg && a.region !== fRg) return false;
     if (fRp && a.rep !== fRp) return false;
     if (srch && !a.name.toLowerCase().includes(srch)) return false;
     return true;
@@ -622,7 +583,7 @@ function renderTable() {
     return pb - pa;
   });
   const tbody = document.getElementById('tbody');
-  if (!list.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-s">${accounts.length?'No accounts match.':'No accounts yet. Add one above.'}</td></tr>`; return; }
+  if (!list.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-s">${accounts.length?'No accounts match.':'No accounts yet. Add one above.'}</td></tr>`; return; }
   tbody.innerHTML = list.map(a => {
     const boxes = getBoxes(a);
     const last = a.checkins && a.checkins.length ? fmtShort(a.checkins[0].date) : '—';
@@ -632,8 +593,8 @@ function renderTable() {
     else if (od) alert = `<span class="badge flag-od">Check-in due</span>`;
     else if (low) alert = `<span class="badge flag-low">Low stock</span>`;
     else if (unsent) alert = `<span class="badge s-notvisited">Invoice not sent</span>`;
-    const unitStr = a.status === 'Trial' ? boxes+' sticks' : a.status === 'Active' ? boxes+' boxes' : '—';
-    return `<tr onclick="openDetail('${a.id}')"><td style="font-weight:500">${a.name}</td><td>${a.type}</td><td>${a.region}</td><td>${badge(a.status)}</td><td>${a.rep}</td><td>${['Trial','Active'].includes(a.status) ? unitStr : '—'}</td><td>${last}</td><td>${alert}</td></tr>`;
+    const boxesStr = ['Trial','Active'].includes(a.status) ? boxesLabel(boxes) : '—';
+    return `<tr onclick="openDetail('${a.id}')"><td style="font-weight:500">${a.name}</td><td>${a.type}</td><td>${badge(a.status)}</td><td>${a.rep}</td><td>${boxesStr}</td><td>${last}</td><td>${alert}</td></tr>`;
   }).join('');
 }
 
@@ -647,9 +608,7 @@ function setInvFilter(f, btn) {
 function renderInvoices() {
   const allPOs = [];
   accounts.forEach(a => {
-    (a.pos||[]).forEach(po => {
-      allPOs.push({acc:a, po, cls:invClass(po)});
-    });
+    (a.pos||[]).forEach(po => allPOs.push({acc:a, po, cls:invClass(po)}));
   });
   const order = {overdue:0, outstanding:1, unsent:2, paid:3};
   allPOs.sort((a,b) => (order[a.cls]||0) - (order[b.cls]||0));
@@ -670,7 +629,7 @@ function renderInvoices() {
     actions.push(`<button class="inv-btn" onclick="openDetail('${acc.id}');showView('accounts')" style="color:#666">View account</button>`);
     return `<div class="inv-card ${cls}">
       <div class="inv-top">
-        <div><div class="inv-name">${acc.name} <span style="font-weight:400;color:#666;font-size:12px">· ${acc.region} · ${acc.rep}</span></div><div class="inv-sub">${subParts.join(' · ')}</div></div>
+        <div><div class="inv-name">${acc.name} <span style="font-weight:400;color:#666;font-size:12px">· ${acc.rep}</span></div><div class="inv-sub">${subParts.join(' · ')}</div></div>
         <div>${invStatusBadge(po)}</div>
       </div>
       ${actions.length ? `<div class="inv-actions">${actions.join('')}</div>` : ''}
@@ -680,12 +639,11 @@ function renderInvoices() {
 
 function renderDashboard() {
   const total = accounts.length;
-  const byStatus = {}, byType = {}, byRegion = {}, byRep = {};
+  const byStatus = {}, byType = {}, byRep = {};
   let totalBoxes = 0, totalPOs = 0, paidPOs = 0, unpaidPOs = 0, overdueCount = 0;
   accounts.forEach(a => {
     byStatus[a.status] = (byStatus[a.status]||0) + 1;
     byType[a.type] = (byType[a.type]||0) + 1;
-    byRegion[a.region||'Unknown'] = (byRegion[a.region||'Unknown']||0) + 1;
     byRep[a.rep] = (byRep[a.rep]||0) + 1;
     (a.pos||[]).forEach(po => {
       totalPOs++; totalBoxes += po.cartons * 20;
@@ -701,7 +659,7 @@ function renderDashboard() {
       <div class="kch"><span>${s}</span><span>${items.length}</span></div>
       ${items.slice(0,6).map(a => `<div class="kcard" onclick="openDetail('${a.id}');showView('accounts')">
         <div class="kcard-name">${a.name}</div>
-        <div class="kcard-sub">${a.region} · ${a.rep}</div>
+        <div class="kcard-sub">${a.rep}</div>
       </div>`).join('')}
       ${items.length > 6 ? `<div style="font-size:11px;color:#999;padding:4px 2px">+${items.length-6} more</div>` : ''}
       ${items.length === 0 ? '<div style="font-size:11px;color:#999;padding:3px 0">None</div>' : ''}
@@ -719,10 +677,8 @@ function renderDashboard() {
       <div class="dash-card"><h3>By store type</h3>
         ${Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="dash-row"><span class="dash-row-l">${k}</span><span class="dash-row-v">${v}</span></div>`).join('') || '<div class="empty-s">No data</div>'}
       </div>
-      <div class="dash-card"><h3>By region</h3>
-        ${Object.entries(byRegion).map(([k,v])=>`<div class="dash-row"><span class="dash-row-l">${k}</span><span class="dash-row-v">${v}</span></div>`).join('') || '<div class="empty-s">No data</div>'}
-        <div style="margin-top:10px"><h3 style="font-size:11px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">By rep</h3>
-        ${Object.entries(byRep).map(([k,v])=>`<div class="dash-row"><span class="dash-row-l">${k}</span><span class="dash-row-v">${v}</span></div>`).join('')}</div>
+      <div class="dash-card"><h3>By rep</h3>
+        ${Object.entries(byRep).map(([k,v])=>`<div class="dash-row"><span class="dash-row-l">${k}</span><span class="dash-row-v">${v}</span></div>`).join('') || '<div class="empty-s">No data</div>'}
       </div>
       <div class="dash-card"><h3>Orders and revenue</h3>
         <div class="dash-row"><span class="dash-row-l">Total PO orders</span><span class="dash-row-v">${totalPOs}</span></div>
@@ -732,7 +688,7 @@ function renderDashboard() {
         <div class="dash-row"><span class="dash-row-l">Overdue (30+ days)</span><span class="dash-row-v" style="${overdueCount?'color:#A32D2D':''}">${overdueCount}</span></div>
       </div>
       <div class="dash-card" style="grid-column:span 2"><h3>Low stock · active accounts</h3>
-        ${accounts.filter(a=>isLowStock(a)).map(a=>`<div class="dash-row"><span class="dash-row-l" style="cursor:pointer;color:#1D9E75" onclick="openDetail('${a.id}');showView('accounts')">${a.name}</span><span class="dash-row-v">${getBoxes(a)} boxes left</span></div>`).join('') || '<div style="font-size:12px;color:#999;padding:8px 0">No low stock alerts</div>'}
+        ${accounts.filter(a=>isLowStock(a)).map(a=>`<div class="dash-row"><span class="dash-row-l" style="cursor:pointer;color:#1D9E75" onclick="openDetail('${a.id}');showView('accounts')">${a.name}</span><span class="dash-row-v">${boxesLabel(getBoxes(a))} left</span></div>`).join('') || '<div style="font-size:12px;color:#999;padding:8px 0">No low stock alerts</div>'}
       </div>
     </div>`;
 }
@@ -743,18 +699,32 @@ function showView(v) {
 }
 
 // =============================================================
-// MUTATING ACTIONS
+// ADD / EDIT ACCOUNT
 // =============================================================
+
+function computeBoxesForStatus(status) {
+  return status === 'Trial' ? TRIAL_START_BOXES : 0;
+}
+
+function onStatusChange() {
+  // Live-update the read-only boxes preview when editing
+  if (!editId) return;
+  const a = accounts.find(x => x.id === editId); if (!a) return;
+  document.getElementById('a-boxes-readonly').textContent = getBoxes(a) + ' boxes · updated by check-ins and POs';
+}
 
 function openAdd() {
   editId = null;
   document.getElementById('m-add-title').textContent = 'Add account';
-  ['a-name','a-street','a-city','a-state','a-zip','a-contact','a-phone','a-ship','a-notes'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('a-boxes').value = '';
+  ['a-name','a-street','a-city','a-zip','a-contact','a-phone','a-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('a-state').value = '';
+  document.getElementById('a-type').value = 'Bar';
   document.getElementById('a-status').value = 'Not Visited';
-  document.getElementById('a-placement').value = '';
+  document.getElementById('a-rep').value = 'Wyatt';
   document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('a-boxes-wrap').style.display = 'none';
   document.getElementById('m-add').classList.add('open');
+  setTimeout(() => document.getElementById('a-name').focus(), 60);
 }
 
 function startEdit() {
@@ -768,47 +738,66 @@ function startEdit() {
   document.getElementById('a-city').value = a.city||'';
   document.getElementById('a-state').value = a.state||'';
   document.getElementById('a-zip').value = a.zip||'';
-  document.getElementById('a-region').value = a.region||'NYC';
-  document.getElementById('a-placement').value = a.placement||'';
-  document.getElementById('a-boxes').value = a.boxesOnShelf||0;
   document.getElementById('a-contact').value = a.contact||'';
   document.getElementById('a-phone').value = a.phone||'';
-  document.getElementById('a-ship').value = a.shipAddress||'';
   document.getElementById('a-rep').value = a.rep||'Wyatt';
   document.getElementById('a-date').value = a.dateAdded||'';
   document.getElementById('a-notes').value = a.notes||'';
+  document.getElementById('a-boxes-wrap').style.display = 'flex';
+  document.getElementById('a-boxes-readonly').textContent = getBoxes(a) + ' boxes · updated by check-ins and POs';
   document.getElementById('m-add').classList.add('open');
 }
 
+function validateAccountForm() {
+  const required = [
+    ['a-name','Store name'],
+    ['a-street','Street address'],
+    ['a-city','City'],
+    ['a-state','State'],
+    ['a-zip','Zip']
+  ];
+  for (const [id, label] of required) {
+    const v = document.getElementById(id).value.trim();
+    if (!v) { alert(label + ' is required'); document.getElementById(id).focus(); return false; }
+  }
+  return true;
+}
+
 async function saveAccount() {
-  const name = document.getElementById('a-name').value.trim();
-  if (!name) { alert('Store name is required'); return; }
+  if (!validateAccountForm()) return;
   const acc = {
-    name,
+    name: document.getElementById('a-name').value.trim(),
     type: document.getElementById('a-type').value,
     status: document.getElementById('a-status').value,
-    street: document.getElementById('a-street').value,
-    city: document.getElementById('a-city').value,
-    state: document.getElementById('a-state').value.toUpperCase(),
-    zip: document.getElementById('a-zip').value,
-    region: document.getElementById('a-region').value,
-    placement: document.getElementById('a-placement').value,
-    boxesOnShelf: parseInt(document.getElementById('a-boxes').value)||0,
-    contact: document.getElementById('a-contact').value,
-    phone: document.getElementById('a-phone').value,
-    shipAddress: document.getElementById('a-ship').value,
+    street: document.getElementById('a-street').value.trim(),
+    city: document.getElementById('a-city').value.trim(),
+    state: document.getElementById('a-state').value.trim().toUpperCase(),
+    zip: document.getElementById('a-zip').value.trim(),
+    contact: document.getElementById('a-contact').value.trim(),
+    phone: document.getElementById('a-phone').value.trim(),
     rep: document.getElementById('a-rep').value,
     dateAdded: document.getElementById('a-date').value,
-    notes: document.getElementById('a-notes').value
+    notes: document.getElementById('a-notes').value.trim()
   };
   closeM('m-add');
   let saved;
-  if (editId) saved = await updateAccountInDb(editId, accToDbPayload(acc));
-  else saved = await insertAccountInDb(acc);
+  if (editId) {
+    // Don't overwrite boxes_on_shelf on edit — it's managed by check-ins and POs.
+    saved = await updateAccountInDb(editId, accToDbPayload(acc));
+  } else {
+    // On create, auto-set boxes based on initial status.
+    acc.boxesOnShelf = computeBoxesForStatus(acc.status);
+    saved = await insertAccountInDb(acc);
+  }
   if (saved) { editId = null; await fetchAccounts(); }
 }
 
+// =============================================================
+// ACCOUNT DETAIL
+// =============================================================
+
 function openDetail(id) { curId = id; dTab = 'info'; renderDetail(); document.getElementById('m-detail').classList.add('open'); }
+function switchTab(t) { dTab = t; renderDetail(); }
 
 function renderDetail() {
   const a = accounts.find(x => x.id === curId); if (!a) return;
@@ -824,19 +813,16 @@ function renderDetail() {
     </div>
     ${invOD ? `<div class="notice red">Invoice overdue on a recent order.</div>` : ''}
     ${od && !invOD ? `<div class="notice amber">Check-in overdue since ${fmtShort(nextDue(a))}.</div>` : ''}
-    ${low && !od ? `<div class="notice amber">Low stock — ${boxes} boxes left. Push for a reorder.</div>` : ''}
+    ${low && !od ? `<div class="notice amber">Low stock - ${boxesLabel(boxes)} left. Push for a reorder.</div>` : ''}
     ${unsent && !invOD ? `<div class="notice amber">An invoice has not been sent yet.</div>` : ''}
     ${dTab === 'info' ? `
       <div class="info-grid">
         <div class="info-item"><div class="il">Status</div>${badge(a.status)}</div>
         <div class="info-item"><div class="il">Rep</div><div class="iv">${a.rep}</div></div>
         <div class="info-item"><div class="il">Type</div><div class="iv">${a.type}</div></div>
-        <div class="info-item"><div class="il">Region</div><div class="iv">${a.region}</div></div>
-        <div class="info-item"><div class="il">Address</div><div class="iv">${[a.street,a.city,a.state,a.zip].filter(Boolean).join(', ')||'—'}</div></div>
-        <div class="info-item"><div class="il">Shipping address</div><div class="iv">${a.shipAddress||'Same as above'}</div></div>
-        <div class="info-item"><div class="il">Contact</div><div class="iv">${a.contact||'—'}${a.phone?' · '+a.phone:''}</div></div>
-        <div class="info-item"><div class="il">Placement</div><div class="iv">${a.placement||'Not placed yet'}</div></div>
-        <div class="info-item"><div class="il">${a.status==='Trial'?'Sticks on shelf':'Boxes on shelf'}</div><div class="iv" style="${low?'color:#633806;font-weight:500':''}">${['Trial','Active'].includes(a.status)?boxes:'—'}</div></div>
+        <div class="info-item"><div class="il">Boxes on shelf</div><div class="iv" style="${low?'color:#633806;font-weight:500':''}">${['Trial','Active'].includes(a.status)?boxesLabel(boxes):'—'}</div></div>
+        <div class="info-item" style="grid-column:1/-1"><div class="il">Address</div><div class="iv">${[a.street,a.city,a.state,a.zip].filter(Boolean).join(', ')||'—'}</div></div>
+        <div class="info-item" style="grid-column:1/-1"><div class="il">Contact</div><div class="iv">${a.contact||'—'}${a.phone?' · '+a.phone:''}</div></div>
       </div>
       ${a.notes ? `<div style="font-size:12px;color:#666;background:#f5f5f3;padding:9px 11px;border-radius:8px;margin-bottom:12px">${a.notes}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
@@ -845,11 +831,14 @@ function renderDetail() {
       </div>
       ${checkins.length ? `<div style="font-size:11px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Check-in history</div>
       ${checkins.map(c => `<div class="ci-item">
-        <div class="ci-date">${fmtShort(c.date)} · ${c.method}${c.status&&c.status!==a.status?' · '+badge(c.status):''}</div>
+        <div class="ci-date">${fmtShort(c.date)} · ${c.method}</div>
         ${c.notes ? `<div class="ci-note">${c.notes}</div>` : ''}
         <div class="ci-pills">
-          ${c.units!=null ? `<span class="pill${a.status==='Active'&&c.units<=5?' low':''}">${c.units} ${a.status==='Trial'?'sticks':'boxes'} left</span>` : ''}
-          ${c.placement ? `<span class="pill">${c.placement}</span>` : ''}
+          ${c.boxes!=null ? `<span class="pill${a.status==='Active'&&c.boxes<=LOW_STOCK_THRESHOLD?' low':''}">${boxesLabel(c.boxes)} left</span>` : ''}
+        </div>
+        <div class="ci-actions">
+          <button class="ci-act" onclick="editCi('${c.id}')">Edit</button>
+          <button class="ci-act del" onclick="askDeleteCi('${c.id}')">Delete</button>
         </div>
       </div>`).join('')}` : ''}
     ` : `
@@ -857,7 +846,6 @@ function renderDetail() {
       ${pos.length ? pos.map(po => `<div class="po-item">
         <div class="po-top"><div class="po-title">${po.cartons} carton${po.cartons!==1?'s':''} · ${po.cartons*20} boxes</div>${invStatusBadge(po)}</div>
         <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}</div>
-        ${po.shipAddress ? `<div class="po-meta">Ship to: ${po.shipAddress}</div>` : ''}
         <div class="po-actions" style="margin-top:7px">
           ${po.payStatus!=='paid'&&!po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark invoice sent</button>` : ''}
           ${po.payStatus!=='paid' ? `<button class="inv-btn" style="font-size:11px;padding:4px 10px" onclick="openMarkPaidDetail('${po.id}')">Mark as paid</button>` : ''}
@@ -866,71 +854,154 @@ function renderDetail() {
     `}`;
 }
 
-function switchTab(t) { dTab = t; renderDetail(); }
+// =============================================================
+// CHECK-IN (add + edit + delete)
+// =============================================================
 
 function openCi() {
-  const a = accounts.find(x => x.id === curId);
-  ['ci-boxes','ci-notes'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('ci-method').value = 'Phone call';
-  document.getElementById('ci-placement').value = '';
-  document.getElementById('ci-status').value = '';
-  const showUnits = ['Trial','Active'].includes(a && a.status);
-  document.getElementById('ci-units-wrap').style.display = showUnits ? 'block' : 'none';
-  if (a && a.status === 'Trial') {
-    document.getElementById('ci-units-label').textContent = 'Sticks remaining (trial = 20 sticks)';
-    document.getElementById('ci-units-hint').textContent = 'Ask how many individual sticks are left across both boxes';
-    document.getElementById('ci-boxes').placeholder = 'e.g. 14';
+  editingCiId = null;
+  const a = accounts.find(x => x.id === curId); if (!a) return;
+  document.getElementById('m-ci-title').textContent = 'Log check-in';
+  document.getElementById('ci-save-btn').textContent = 'Save check-in';
+  document.getElementById('ci-method').value = a.status === 'Not Visited' ? 'In person' : 'Phone call';
+  document.getElementById('ci-notes').value = '';
+  document.getElementById('ci-date-wrap').style.display = 'none';
+  const boxesWrap = document.getElementById('ci-boxes-wrap');
+  const boxesInput = document.getElementById('ci-boxes');
+  const hint = document.getElementById('ci-boxes-hint');
+  if (a.status === 'Not Visited') {
+    boxesWrap.style.display = 'none';
+    boxesInput.value = '';
+    hint.textContent = '';
   } else {
-    document.getElementById('ci-units-label').textContent = 'Boxes remaining on shelf';
-    document.getElementById('ci-units-hint').textContent = '';
-    document.getElementById('ci-boxes').placeholder = 'e.g. 8';
+    boxesWrap.style.display = 'block';
+    boxesInput.value = getBoxes(a);
+    hint.textContent = a.status === 'Trial'
+      ? 'Ask how many sticks are left, round to nearest box (15+=2, 5-14=1, 0-4=0).'
+      : 'Round to whole boxes.';
   }
+  document.getElementById('m-ci').classList.add('open');
+}
+
+function editCi(id) {
+  const a = accounts.find(x => x.id === curId); if (!a) return;
+  const c = (a.checkins||[]).find(x => x.id === id); if (!c) return;
+  editingCiId = id;
+  document.getElementById('m-ci-title').textContent = 'Edit check-in';
+  document.getElementById('ci-save-btn').textContent = 'Save changes';
+  document.getElementById('ci-method').value = c.method || 'Phone call';
+  document.getElementById('ci-notes').value = c.notes || '';
+  document.getElementById('ci-date-wrap').style.display = 'block';
+  document.getElementById('ci-date').value = c.date;
+  const boxesWrap = document.getElementById('ci-boxes-wrap');
+  const boxesInput = document.getElementById('ci-boxes');
+  boxesWrap.style.display = 'block';
+  boxesInput.value = (c.boxes !== null && c.boxes !== undefined) ? c.boxes : '';
+  document.getElementById('ci-boxes-hint').textContent = 'Round to whole boxes.';
   document.getElementById('m-ci').classList.add('open');
 }
 
 async function saveCi() {
   const a = accounts.find(x => x.id === curId); if (!a) return;
-  const ns = document.getElementById('ci-status').value;
-  const unitsVal = document.getElementById('ci-boxes').value;
-  const units = unitsVal !== '' ? parseInt(unitsVal) : null;
-  const newPlacement = document.getElementById('ci-placement').value;
+  const method = document.getElementById('ci-method').value;
+  const notes = document.getElementById('ci-notes').value.trim();
+
+  if (editingCiId) {
+    // Edit existing
+    const boxesVal = document.getElementById('ci-boxes').value;
+    const boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
+    const date = document.getElementById('ci-date').value;
+    closeM('m-ci');
+    await updateCheckinInDb(editingCiId, {method, boxes, notes, date});
+    // If the most recent check-in changed, reflect the boxes on the account
+    const updatedCheckins = [...(a.checkins||[])].sort((x,y)=> x.date<y.date?1:-1);
+    if (updatedCheckins[0] && updatedCheckins[0].id === editingCiId && boxes !== null) {
+      await updateAccountInDb(a.id, {boxes_on_shelf: boxes});
+    } else {
+      await touchAccount(a.id);
+    }
+    editingCiId = null;
+    await fetchAccounts();
+    renderDetail();
+    return;
+  }
+
+  // New check-in
+  let boxes;
+  let accPatch = {};
+  if (a.status === 'Not Visited') {
+    // First visit logged. Auto-promote to Trial, set boxes to 2.
+    boxes = TRIAL_START_BOXES;
+    accPatch.status = 'Trial';
+    accPatch.boxes_on_shelf = TRIAL_START_BOXES;
+  } else {
+    const boxesVal = document.getElementById('ci-boxes').value;
+    boxes = boxesVal !== '' ? parseInt(boxesVal) : null;
+    if (boxes !== null) accPatch.boxes_on_shelf = boxes;
+  }
   const ci = {
     date: new Date().toISOString().split('T')[0],
-    method: document.getElementById('ci-method').value,
-    units, placement: newPlacement,
-    status: ns||a.status,
-    notes: document.getElementById('ci-notes').value
+    method, boxes,
+    status: accPatch.status || a.status,
+    notes
   };
   closeM('m-ci');
   await insertCheckinInDb(a.id, ci);
-  // Mirror updates onto the account row
-  const accPatch = {};
-  if (ns && ns !== a.status) accPatch.status = ns;
-  if (newPlacement && newPlacement !== a.placement) accPatch.placement = newPlacement;
-  if (units !== null) accPatch.boxes_on_shelf = units;
   if (Object.keys(accPatch).length > 0) await updateAccountInDb(a.id, accPatch);
   else await touchAccount(a.id);
   await fetchAccounts();
   if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
 }
 
+function askDeleteCi(id) {
+  pendingDelete = {type: 'checkin', id};
+  document.getElementById('confirm-del-title').textContent = 'Delete this check-in?';
+  document.getElementById('confirm-del-sub').textContent = 'This cannot be undone.';
+  document.getElementById('confirm-del').classList.add('open');
+}
+
+async function doConfirmedDelete() {
+  const pd = pendingDelete;
+  closeConfirm();
+  if (!pd) return;
+  if (pd.type === 'account') {
+    closeM('m-detail');
+    const id = pd.id;
+    curId = null;
+    await deleteAccountInDb(id);
+    await fetchAccounts();
+  } else if (pd.type === 'checkin') {
+    await deleteCheckinInDb(pd.id);
+    // Don't modify boxes_on_shelf on delete. Current count reflects the
+    // most recent event (check-in or PO). Deleting history shouldn't
+    // rewrite current state. If the user needs to correct the count,
+    // they log a fresh check-in.
+    await touchAccount(curId);
+    await fetchAccounts();
+    renderDetail();
+  }
+  pendingDelete = null;
+}
+
+// =============================================================
+// PURCHASE ORDER
+// =============================================================
+
 function openPO() {
   ['po-cartons','po-current','po-notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('po-date').value = new Date().toISOString().split('T')[0];
+  // Pre-fill current with the account's current box count (so rep doesn't have to retype)
   const a = accounts.find(x => x.id === curId);
-  document.getElementById('po-ship').value = a && a.shipAddress ? a.shipAddress : [a&&a.street,a&&a.city,a&&a.state,a&&a.zip].filter(Boolean).join(', ')||'';
+  if (a) document.getElementById('po-current').value = getBoxes(a);
   document.getElementById('po-calc').textContent = '';
   document.getElementById('m-po').classList.add('open');
 }
-
 function updatePOCalc() {
   const cartons = parseInt(document.getElementById('po-cartons').value)||0;
   const current = parseInt(document.getElementById('po-current').value)||0;
   if (cartons > 0) {
     document.getElementById('po-calc').textContent = `${cartons} carton${cartons!==1?'s':''} = ${cartons*20} new boxes + ${current} on shelf = ${current+cartons*20} total after delivery`;
-  } else {
-    document.getElementById('po-calc').textContent = '';
-  }
+  } else document.getElementById('po-calc').textContent = '';
 }
 
 async function savePO() {
@@ -941,19 +1012,22 @@ async function savePO() {
   const po = {
     cartons,
     dateConfirmed: document.getElementById('po-date').value,
-    shipAddress: document.getElementById('po-ship').value,
-    notes: document.getElementById('po-notes').value,
+    notes: document.getElementById('po-notes').value.trim(),
     boxesAfterDelivery: totalAfter
   };
   closeM('m-po');
   await insertPOInDb(a.id, po);
   const patch = {boxes_on_shelf: totalAfter};
-  if (a.status === 'Trial') patch.status = 'Active';
+  if (a.status === 'Trial' || a.status === 'Not Visited') patch.status = 'Active';
   await updateAccountInDb(a.id, patch);
   await fetchAccounts();
   dTab = 'orders';
   if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
 }
+
+// =============================================================
+// INVOICES
+// =============================================================
 
 async function markInvoiceSent(accId, poId, e) {
   e && e.stopPropagation();
@@ -962,7 +1036,6 @@ async function markInvoiceSent(accId, poId, e) {
   await touchAccount(accId);
   await fetchAccounts();
 }
-
 async function markInvoiceSentDetail(poId) {
   const today = new Date().toISOString().split('T')[0];
   await updatePOInDb(poId, {invoiceSentDate: today});
@@ -970,7 +1043,6 @@ async function markInvoiceSentDetail(poId) {
   await fetchAccounts();
   renderDetail();
 }
-
 function openMarkPaid(accId, poId, e) {
   e && e.stopPropagation();
   curId = accId; curPOId = poId;
@@ -978,14 +1050,12 @@ function openMarkPaid(accId, poId, e) {
   document.getElementById('paid-method').value = 'Venmo';
   document.getElementById('m-paid').classList.add('open');
 }
-
 function openMarkPaidDetail(poId) {
   curPOId = poId;
   document.getElementById('paid-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('paid-method').value = 'Venmo';
   document.getElementById('m-paid').classList.add('open');
 }
-
 async function savePaid() {
   const datePaid = document.getElementById('paid-date').value;
   const payMethod = document.getElementById('paid-method').value;
@@ -996,20 +1066,23 @@ async function savePaid() {
   if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
 }
 
-function confirmDelete() { document.getElementById('confirm-del').classList.add('open'); }
-function closeConfirm() { document.getElementById('confirm-del').classList.remove('open'); }
-async function deleteAccount() {
-  closeConfirm(); closeM('m-detail');
-  const id = curId; curId = null;
-  await deleteAccountInDb(id);
-  await fetchAccounts();
+// =============================================================
+// DELETE ACCOUNT
+// =============================================================
+
+function confirmDelete() {
+  pendingDelete = {type: 'account', id: curId};
+  document.getElementById('confirm-del-title').textContent = 'Delete this account?';
+  document.getElementById('confirm-del-sub').textContent = 'This also deletes all check-ins and orders for this account. Cannot be undone.';
+  document.getElementById('confirm-del').classList.add('open');
 }
+function closeConfirm() { document.getElementById('confirm-del').classList.remove('open'); pendingDelete = null; }
+
+// =============================================================
+// MISC
+// =============================================================
 
 function closeM(id) { document.getElementById(id).classList.remove('open'); }
-
-// =============================================================
-// INIT
-// =============================================================
 
 window.addEventListener('load', checkAuth);
 </script>
