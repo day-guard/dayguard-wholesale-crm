@@ -321,6 +321,18 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   </div>
 </div>
 
+<!-- Ship + invoice reminder (after saving a PO) -->
+<div class="confirm-overlay" id="ship-reminder">
+  <div class="confirm-box">
+    <div style="font-size:32px;margin-bottom:6px">📦</div>
+    <p>Send the product and the invoice</p>
+    <small>Ship the cartons to the store and email the invoice using Felix's template. Once both are done, come back to this PO and tap "Mark product &amp; invoice sent" to start the NET30 clock.</small>
+    <div class="confirm-btns">
+      <button class="btn-p" onclick="closeShipReminder()">Got it</button>
+    </div>
+  </div>
+</div>
+
 <!-- Delete Confirm -->
 <div class="confirm-overlay" id="confirm-del">
   <div class="confirm-box">
@@ -546,7 +558,7 @@ function badge(s) {
 }
 function invStatusBadge(po) {
   if (po.payStatus === 'paid') return `<span class="badge s-paid">Paid</span>`;
-  if (!po.invoiceSentDate) return `<span class="badge s-notsent">Invoice not sent</span>`;
+  if (!po.invoiceSentDate) return `<span class="badge s-notsent">Product & invoice not sent</span>`;
   const days = daysSince(po.invoiceSentDate);
   if (days > 30) return `<span class="badge s-overdue">Overdue ${days}d</span>`;
   return `<span class="badge s-outstanding">Outstanding ${days}d</span>`;
@@ -604,7 +616,7 @@ function renderTable() {
     if (invOD) alert = `<span class="badge flag-inv">Invoice overdue</span>`;
     else if (od) alert = `<span class="badge flag-od">Check-in due</span>`;
     else if (low) alert = `<span class="badge flag-low">Low stock</span>`;
-    else if (unsent) alert = `<span class="badge s-notsent">Invoice not sent</span>`;
+    else if (unsent) alert = `<span class="badge s-notsent">Product & invoice not sent</span>`;
     const boxesStr = ['Trial','Active'].includes(a.status) ? boxesLabel(boxes) : '—';
     return `<tr onclick="openDetail('${a.id}')"><td style="font-weight:500">${a.name}</td><td>${a.type}</td><td>${badge(a.status)}</td><td>${a.rep}</td><td>${boxesStr}</td><td>${last}</td><td>${alert}</td></tr>`;
   }).join('');
@@ -636,7 +648,7 @@ function renderInvoices() {
     const actions = [];
     if (po.payStatus !== 'paid') {
       if (!po.invoiceSentDate) {
-        actions.push(`<button class="inv-btn green" onclick="markInvoiceSent('${acc.id}','${po.id}',event)">Mark invoice sent</button>`);
+        actions.push(`<button class="inv-btn green" onclick="markInvoiceSent('${acc.id}','${po.id}',event)">Mark product & invoice sent</button>`);
       } else {
         actions.push(`<button class="inv-btn" onclick="openMarkPaid('${acc.id}','${po.id}',event)">Mark as paid</button>`);
       }
@@ -828,7 +840,7 @@ function renderDetail() {
     ${invOD ? `<div class="notice red">Invoice overdue on a recent order.</div>` : ''}
     ${od && !invOD && !isDead ? `<div class="notice amber">Check-in overdue since ${fmtShort(nextDue(a))}.</div>` : ''}
     ${low && !od && !isDead ? `<div class="notice amber">Low stock - ${boxesLabel(boxes)} left. Push for a reorder.</div>` : ''}
-    ${unsent && !invOD ? `<div class="notice amber">An invoice has not been sent yet.</div>` : ''}
+    ${unsent && !invOD ? `<div class="notice amber">Product and invoice not sent yet.</div>` : ''}
     ${dTab === 'info' ? `
       <div class="info-grid">
         <div class="info-item"><div class="il">Status</div>${badge(a.status)}</div>
@@ -858,7 +870,7 @@ function renderDetail() {
         <div class="po-top"><div class="po-title">${po.cartons} carton${po.cartons!==1?'s':''} · ${po.cartons*20} boxes</div>${invStatusBadge(po)}</div>
         <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}</div>
         <div class="po-actions" style="margin-top:7px">
-          ${po.payStatus!=='paid' && !po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark invoice sent</button>` : ''}
+          ${po.payStatus!=='paid' && !po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark product & invoice sent</button>` : ''}
           ${po.payStatus!=='paid' && po.invoiceSentDate ? `<button class="inv-btn" style="font-size:11px;padding:4px 10px" onclick="openMarkPaidDetail('${po.id}')">Mark as paid</button>` : ''}
         </div>
       </div>`).join('') : '<div class="empty-s">No orders yet.</div>'}
@@ -1134,7 +1146,12 @@ async function savePO() {
   await fetchAccounts();
   dTab = 'orders';
   if (document.getElementById('m-detail').classList.contains('open')) renderDetail();
+  // Remind the rep to ship the product and email the invoice.
+  showShipReminder();
 }
+
+function showShipReminder() { document.getElementById('ship-reminder').classList.add('open'); }
+function closeShipReminder() { document.getElementById('ship-reminder').classList.remove('open'); }
 
 // =============================================================
 // INVOICES
