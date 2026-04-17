@@ -57,6 +57,11 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 .flag-low{background:#FAEEDA;color:#633806}
 .flag-od{background:#FCEBEB;color:#791F1F}
 .flag-inv{background:#FCEBEB;color:#791F1F}
+/* Invoice status colors: not sent = yellow, outstanding = orange, paid = green, overdue = red */
+.s-paid{background:#E1F5EE;color:#0F6E56}
+.s-notsent{background:#FFF4B8;color:#7A5A00}
+.s-outstanding{background:#FFE0B2;color:#8B4A00}
+.s-overdue{background:#FCEBEB;color:#791F1F}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.38);align-items:flex-start;justify-content:center;padding:20px;z-index:100;overflow-y:auto}
 .modal-bg.open{display:flex}
 .modal{background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,0.1);width:100%;max-width:520px;margin:auto}
@@ -110,8 +115,8 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
 .inv-ftab.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 .inv-card{background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);padding:12px 14px;margin-bottom:8px;border-left:3px solid #e0e0e0}
 .inv-card.overdue{border-left-color:#E24B4A}
-.inv-card.outstanding{border-left-color:#EF9F27}
-.inv-card.unsent{border-left-color:#B4B2A9}
+.inv-card.outstanding{border-left-color:#F08C1D}
+.inv-card.unsent{border-left-color:#E6B800}
 .inv-card.paid{border-left-color:#1D9E75;opacity:.65}
 .inv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .inv-name{font-size:13px;font-weight:500}
@@ -540,11 +545,11 @@ function badge(s) {
   return `<span class="badge ${m[s]||'s-notvisited'}">${s}</span>`;
 }
 function invStatusBadge(po) {
-  if (po.payStatus === 'paid') return `<span class="badge s-active">Paid</span>`;
-  if (!po.invoiceSentDate) return `<span class="badge s-notvisited">Invoice not sent</span>`;
+  if (po.payStatus === 'paid') return `<span class="badge s-paid">Paid</span>`;
+  if (!po.invoiceSentDate) return `<span class="badge s-notsent">Invoice not sent</span>`;
   const days = daysSince(po.invoiceSentDate);
-  if (days > 30) return `<span class="badge flag-od">Overdue ${days}d</span>`;
-  return `<span class="badge s-trial">Outstanding ${days}d</span>`;
+  if (days > 30) return `<span class="badge s-overdue">Overdue ${days}d</span>`;
+  return `<span class="badge s-outstanding">Outstanding ${days}d</span>`;
 }
 function invClass(po) {
   if (po.payStatus === 'paid') return 'paid';
@@ -599,7 +604,7 @@ function renderTable() {
     if (invOD) alert = `<span class="badge flag-inv">Invoice overdue</span>`;
     else if (od) alert = `<span class="badge flag-od">Check-in due</span>`;
     else if (low) alert = `<span class="badge flag-low">Low stock</span>`;
-    else if (unsent) alert = `<span class="badge s-notvisited">Invoice not sent</span>`;
+    else if (unsent) alert = `<span class="badge s-notsent">Invoice not sent</span>`;
     const boxesStr = ['Trial','Active'].includes(a.status) ? boxesLabel(boxes) : '—';
     return `<tr onclick="openDetail('${a.id}')"><td style="font-weight:500">${a.name}</td><td>${a.type}</td><td>${badge(a.status)}</td><td>${a.rep}</td><td>${boxesStr}</td><td>${last}</td><td>${alert}</td></tr>`;
   }).join('');
@@ -630,8 +635,11 @@ function renderInvoices() {
     if (po.payStatus === 'paid') subParts.push(`Paid ${fmtShort(po.datePaid)} via ${po.payMethod}`);
     const actions = [];
     if (po.payStatus !== 'paid') {
-      if (!po.invoiceSentDate) actions.push(`<button class="inv-btn green" onclick="markInvoiceSent('${acc.id}','${po.id}',event)">Mark invoice sent</button>`);
-      actions.push(`<button class="inv-btn" onclick="openMarkPaid('${acc.id}','${po.id}',event)">Mark as paid</button>`);
+      if (!po.invoiceSentDate) {
+        actions.push(`<button class="inv-btn green" onclick="markInvoiceSent('${acc.id}','${po.id}',event)">Mark invoice sent</button>`);
+      } else {
+        actions.push(`<button class="inv-btn" onclick="openMarkPaid('${acc.id}','${po.id}',event)">Mark as paid</button>`);
+      }
     }
     actions.push(`<button class="inv-btn" onclick="openDetail('${acc.id}');showView('accounts')" style="color:#666">View account</button>`);
     return `<div class="inv-card ${cls}">
@@ -850,8 +858,8 @@ function renderDetail() {
         <div class="po-top"><div class="po-title">${po.cartons} carton${po.cartons!==1?'s':''} · ${po.cartons*20} boxes</div>${invStatusBadge(po)}</div>
         <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}</div>
         <div class="po-actions" style="margin-top:7px">
-          ${po.payStatus!=='paid'&&!po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark invoice sent</button>` : ''}
-          ${po.payStatus!=='paid' ? `<button class="inv-btn" style="font-size:11px;padding:4px 10px" onclick="openMarkPaidDetail('${po.id}')">Mark as paid</button>` : ''}
+          ${po.payStatus!=='paid' && !po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark invoice sent</button>` : ''}
+          ${po.payStatus!=='paid' && po.invoiceSentDate ? `<button class="inv-btn" style="font-size:11px;padding:4px 10px" onclick="openMarkPaidDetail('${po.id}')">Mark as paid</button>` : ''}
         </div>
       </div>`).join('') : '<div class="empty-s">No orders yet.</div>'}
     `}`;
