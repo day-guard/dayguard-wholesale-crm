@@ -902,10 +902,13 @@ function configureOutcomeButtons(status) {
     dead.innerText = '❌ No longer carry - mark as Dead';
     dead.onclick = () => saveCiOutcome('dead');
   } else {
-    // Active: only two outcomes — PO or Dead.
+    // Active — same three outcomes as Trial. Weekly calls where the store
+    // gives a box count but isn't reordering yet use "No change."
     yes.innerText = '✅ Yes to PO - they want to reorder';
     yes.onclick = () => saveCiOutcome('po');
-    later.style.display = 'none';
+    later.style.display = '';
+    later.innerText = '📝 No change - just log the check-in';
+    later.onclick = () => saveCiOutcome('later');
     dead.innerText = '❌ No longer carry - mark as Dead';
     dead.onclick = () => saveCiOutcome('dead');
   }
