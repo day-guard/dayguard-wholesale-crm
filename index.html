@@ -326,7 +326,7 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   <div class="confirm-box">
     <div style="font-size:32px;margin-bottom:6px">📦</div>
     <p>Send the product and the invoice</p>
-    <small>Ship the cartons to the store and email the invoice using Felix's template. Once both are done, come back to this PO and tap "Mark product &amp; invoice sent" to start the NET30 clock.</small>
+    <small>Ship the cartons to the store and email the invoice. Once both are done, come back to this PO and tap "Mark product &amp; invoice sent" to start the NET30 clock and update the boxes on shelf.</small>
     <div class="confirm-btns">
       <button class="btn-p" onclick="closeShipReminder()">Got it</button>
     </div>
@@ -1048,21 +1048,33 @@ async function doDeleteCheckinWithRollback(id) {
 }
 
 // Recompute status + boxes_on_shelf from the current set of check-ins + POs.
+// Rules:
+//   - A check-in sets status (from status_at_checkin) and boxes (from units_remaining).
+//   - A PO with invoice_sent_date SET means the product landed: contributes Active + boxes_after_delivery.
+//   - A PO without invoice_sent_date means Active status only; boxes come from the check-in that triggered it.
 async function recomputeAccountFromEvents(accountId) {
   try {
     const {data: row, error} = await sb.from('accounts')
-      .select('id, check_ins(id,created_at,status_at_checkin,units_remaining), purchase_orders(id,created_at,boxes_after_delivery)')
+      .select('id, check_ins(id,created_at,status_at_checkin,units_remaining), purchase_orders(id,created_at,invoice_sent_date,boxes_after_delivery)')
       .eq('id', accountId).single();
     if (error || !row) return;
-    const events = [
-      ...(row.check_ins||[]).map(c => ({at: c.created_at, status: c.status_at_checkin, boxes: c.units_remaining})),
-      ...(row.purchase_orders||[]).map(p => ({at: p.created_at, status: 'Active', boxes: p.boxes_after_delivery}))
-    ].sort((x,y) => (x.at > y.at ? -1 : 1));
+    const events = [];
+    (row.check_ins||[]).forEach(c => events.push({at: c.created_at, status: c.status_at_checkin, boxes: c.units_remaining}));
+    (row.purchase_orders||[]).forEach(p => {
+      if (p.invoice_sent_date) {
+        // Product landed — use ship date as the event timestamp; prefer end-of-day so it sorts after same-day check-ins.
+        events.push({at: p.invoice_sent_date + 'T23:59:59Z', status: 'Active', boxes: p.boxes_after_delivery});
+      } else {
+        // Unshipped PO — marks the account Active but doesn't yet move boxes.
+        events.push({at: p.created_at, status: 'Active', boxes: null});
+      }
+    });
+    events.sort((x,y) => (x.at > y.at ? -1 : 1));
     let newStatus = 'Pre-trial', newBoxes = 0;
     if (events.length > 0) {
-      const latest = events[0];
-      if (latest.status) newStatus = latest.status;
-      if (latest.boxes != null) newBoxes = latest.boxes;
+      newStatus = events[0].status || 'Pre-trial';
+      const withBoxes = events.find(e => e.boxes != null);
+      if (withBoxes) newBoxes = withBoxes.boxes;
     }
     await updateAccountInDb(accountId, {status: newStatus, boxes_on_shelf: newBoxes});
   } catch(e) { console.error('recompute', e); }
@@ -1137,8 +1149,11 @@ async function savePO() {
     return;
   }
 
-  // 3. Promote account to Active with new box total.
-  await updateAccountInDb(accountId, {status: 'Active', boxes_on_shelf: totalAfter});
+  // 3. Promote account to Active. boxes_on_shelf stays at the pre-delivery
+  //    count (what the rep reported on the check-in) because the product
+  //    hasn't physically landed yet. It'll jump to totalAfter only once the
+  //    rep taps "Mark product & invoice sent."
+  await updateAccountInDb(accountId, {status: 'Active', boxes_on_shelf: current});
 
   // Done — clean up.
   pendingCheckin = null;
@@ -1157,17 +1172,32 @@ function closeShipReminder() { document.getElementById('ship-reminder').classLis
 // INVOICES
 // =============================================================
 
+// Marking "product & invoice sent" records the ship date AND bumps
+// boxes_on_shelf to the PO's boxes_after_delivery, since the product
+// has now physically landed at the store.
 async function markInvoiceSent(accId, poId, e) {
   e && e.stopPropagation();
+  const acc = accounts.find(a => a.id === accId);
+  const po = acc ? (acc.pos||[]).find(p => p.id === poId) : null;
   const today = new Date().toISOString().split('T')[0];
   await updatePOInDb(poId, {invoiceSentDate: today});
-  await touchAccount(accId);
+  if (po && po.boxesAfterDelivery != null) {
+    await updateAccountInDb(accId, {boxes_on_shelf: po.boxesAfterDelivery});
+  } else {
+    await touchAccount(accId);
+  }
   await fetchAccounts();
 }
 async function markInvoiceSentDetail(poId) {
+  const acc = accounts.find(a => a.id === curId);
+  const po = acc ? (acc.pos||[]).find(p => p.id === poId) : null;
   const today = new Date().toISOString().split('T')[0];
   await updatePOInDb(poId, {invoiceSentDate: today});
-  await touchAccount(curId);
+  if (po && po.boxesAfterDelivery != null) {
+    await updateAccountInDb(curId, {boxes_on_shelf: po.boxesAfterDelivery});
+  } else {
+    await touchAccount(curId);
+  }
   await fetchAccounts();
   renderDetail();
 }
