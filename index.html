@@ -311,8 +311,8 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   <div class="modal" style="max-width:340px">
     <div class="mh"><h2>Mark as paid</h2><button class="xbtn" onclick="closeM('m-paid')">×</button></div>
     <div class="mb"><div class="fg">
-      <div class="f ff"><label>Payment method</label><select id="paid-method"><option>Venmo</option><option>ACH</option></select></div>
       <div class="f ff"><label>Date received</label><input id="paid-date" type="date"></div>
+      <div class="f ff" style="font-size:11px;color:#666;line-height:1.4">All wholesale payments route through the invoice's "Pay now" link (QuickBooks Payments — ACH or card). If a payment ever comes in another way, log it in QBO and note it here.</div>
     </div></div>
     <div class="mf">
       <button class="btn-s" onclick="closeM('m-paid')">Cancel</button>
@@ -644,7 +644,7 @@ function renderInvoices() {
     const boxes = po.cartons * 20;
     let subParts = [`${po.cartons} carton${po.cartons!==1?'s':''} · ${boxes} boxes`, `Ordered ${fmtShort(po.dateConfirmed)}`];
     if (po.invoiceSentDate) subParts.push(`Invoice sent ${fmtShort(po.invoiceSentDate)}`);
-    if (po.payStatus === 'paid') subParts.push(`Paid ${fmtShort(po.datePaid)} via ${po.payMethod}`);
+    if (po.payStatus === 'paid') subParts.push(`Paid ${fmtShort(po.datePaid)}`);
     const actions = [];
     if (po.payStatus !== 'paid') {
       if (!po.invoiceSentDate) {
@@ -868,7 +868,7 @@ function renderDetail() {
     ` : `
       ${pos.length ? pos.map(po => `<div class="po-item">
         <div class="po-top"><div class="po-title">${po.cartons} carton${po.cartons!==1?'s':''} · ${po.cartons*20} boxes</div>${invStatusBadge(po)}</div>
-        <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid)+' via '+po.payMethod:''}</div>
+        <div class="po-meta">Ordered ${fmtShort(po.dateConfirmed)}${po.invoiceSentDate?' · Invoice sent '+fmtShort(po.invoiceSentDate):''}${po.payStatus==='paid'?' · Paid '+fmtShort(po.datePaid):''}</div>
         <div class="po-actions" style="margin-top:7px">
           ${po.payStatus!=='paid' && !po.invoiceSentDate ? `<button class="inv-btn green" style="font-size:11px;padding:4px 10px" onclick="markInvoiceSentDetail('${po.id}')">Mark product & invoice sent</button>` : ''}
           ${po.payStatus!=='paid' && po.invoiceSentDate ? `<button class="inv-btn" style="font-size:11px;padding:4px 10px" onclick="openMarkPaidDetail('${po.id}')">Mark as paid</button>` : ''}
@@ -1207,20 +1207,17 @@ function openMarkPaid(accId, poId, e) {
   e && e.stopPropagation();
   curId = accId; curPOId = poId;
   document.getElementById('paid-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('paid-method').value = 'Venmo';
   document.getElementById('m-paid').classList.add('open');
 }
 function openMarkPaidDetail(poId) {
   curPOId = poId;
   document.getElementById('paid-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('paid-method').value = 'Venmo';
   document.getElementById('m-paid').classList.add('open');
 }
 async function savePaid() {
   const datePaid = document.getElementById('paid-date').value;
-  const payMethod = document.getElementById('paid-method').value;
   closeM('m-paid');
-  await updatePOInDb(curPOId, {payStatus: 'paid', payMethod, datePaid});
+  await updatePOInDb(curPOId, {payStatus: 'paid', datePaid});
   await touchAccount(curId);
   await fetchAccounts();
   if (document.getElementById('m-detail').classList.contains('open')) renderDetail();

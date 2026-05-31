@@ -75,15 +75,15 @@ CREATE TABLE public.purchase_orders (
   invoice_sent_date    DATE,
   pay_status           TEXT NOT NULL DEFAULT 'outstanding'
                        CHECK (pay_status IN ('outstanding','paid')),
-  pay_method           TEXT
-                       CHECK (pay_method IN ('Venmo','ACH')),
+  -- pay_method is kept as a free-text column for legacy / edge cases,
+  -- but the CRM no longer collects it. All wholesale payments now route
+  -- through the QuickBooks "Pay now" link on the invoice, which records
+  -- the method (ACH or card) on the QBO side.
+  pay_method           TEXT,
   date_paid            DATE,
   boxes_after_delivery INT CHECK (boxes_after_delivery IS NULL OR boxes_after_delivery >= 0),
   notes                TEXT,
-  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT paid_has_method_and_date CHECK (
-    pay_status = 'outstanding' OR (pay_method IS NOT NULL AND date_paid IS NOT NULL)
-  )
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX pos_account_idx      ON public.purchase_orders(account_id, date_confirmed DESC);
