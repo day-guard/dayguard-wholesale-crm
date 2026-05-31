@@ -267,9 +267,8 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
     <div class="mb"><div class="fg">
       <div class="f ff"><label>Contact method</label><select id="ci-method"><option>Phone call</option><option>In person</option><option>Text</option><option>Email</option></select></div>
       <div class="f ff" id="ci-boxes-wrap">
-        <label>Boxes remaining on shelf</label>
+        <label>Boxes remaining in store</label>
         <input id="ci-boxes" type="number" placeholder="0" min="0">
-        <div id="ci-boxes-hint" style="font-size:11px;color:#666;margin-top:3px"></div>
       </div>
       <div class="f ff"><label>Notes</label><textarea id="ci-notes" placeholder="What happened? Any feedback?"></textarea></div>
       <div class="f ff" id="ci-outcome-wrap" style="display:none">
@@ -325,8 +324,8 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   <div class="confirm-box">
     <div style="font-size:32px;margin-bottom:6px">📦</div>
     <p>Send the product and the invoice</p>
-    <small style="display:block;margin-bottom:10px">Ship the cartons to the store, and create and send the invoice through QuickBooks Online.</small>
-    <small style="display:block">Once both are done, come back to this PO and tap "Mark product &amp; invoice sent" in the CRM to start the NET30 clock and update the boxes on shelf.</small>
+    <small style="display:block;margin-bottom:10px">Ship the products and send the invoice via QuickBooks Online.</small>
+    <small style="display:block">Then tap "Mark product &amp; invoice sent" to start the NET30 clock.</small>
     <div class="confirm-btns">
       <button class="btn-p" onclick="closeShipReminder()">Got it</button>
     </div>
@@ -930,16 +929,13 @@ function openCi() {
 
   const boxesWrap = document.getElementById('ci-boxes-wrap');
   const boxesInput = document.getElementById('ci-boxes');
-  const hint = document.getElementById('ci-boxes-hint');
 
   if (a.status === 'Pre-trial') {
     boxesWrap.style.display = 'none';
     boxesInput.value = '';
-    hint.textContent = '';
   } else {
     boxesWrap.style.display = 'block';
     boxesInput.value = getBoxes(a);
-    hint.textContent = 'Whole boxes.';
   }
   configureOutcomeButtons(a.status);
   document.getElementById('ci-outcome-wrap').style.display = 'block';
