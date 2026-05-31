@@ -312,7 +312,6 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
     <div class="mh"><h2>Mark as paid</h2><button class="xbtn" onclick="closeM('m-paid')">×</button></div>
     <div class="mb"><div class="fg">
       <div class="f ff"><label>Date received</label><input id="paid-date" type="date"></div>
-      <div class="f ff" style="font-size:11px;color:#666;line-height:1.4">All wholesale payments route through the invoice's "Pay now" link (QuickBooks Payments — ACH or card). If a payment ever comes in another way, log it in QBO and note it here.</div>
     </div></div>
     <div class="mf">
       <button class="btn-s" onclick="closeM('m-paid')">Cancel</button>
@@ -326,7 +325,8 @@ tbody td{padding:9px 11px;font-size:12px;color:#1a1a1a;white-space:nowrap;overfl
   <div class="confirm-box">
     <div style="font-size:32px;margin-bottom:6px">📦</div>
     <p>Send the product and the invoice</p>
-    <small>Ship the cartons to the store and email the invoice. Once both are done, come back to this PO and tap "Mark product &amp; invoice sent" to start the NET30 clock and update the boxes on shelf.</small>
+    <small style="display:block;margin-bottom:10px">Ship the cartons to the store, and create and send the invoice through QuickBooks Online.</small>
+    <small style="display:block">Once both are done, come back to this PO and tap "Mark product &amp; invoice sent" in the CRM to start the NET30 clock and update the boxes on shelf.</small>
     <div class="confirm-btns">
       <button class="btn-p" onclick="closeShipReminder()">Got it</button>
     </div>
@@ -355,7 +355,8 @@ const sb = supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, a
 // Trial starts with this many boxes (2 boxes dropped during first visit).
 const TRIAL_START_BOXES = 2;
 // Active accounts with this many or fewer boxes get the low-stock flag.
-const LOW_STOCK_THRESHOLD = 5;
+// Suppressed when there's an unshipped PO — product is already on the way.
+const LOW_STOCK_THRESHOLD = 3;
 
 let accounts = [], curId = null, editId = null, dTab = 'info', invFilter = 'all';
 let curPOId = null;
@@ -538,7 +539,14 @@ async function touchAccount(id) {
 
 function getBoxes(a) { return typeof a.boxesOnShelf === 'number' ? a.boxesOnShelf : 0; }
 function boxesLabel(n) { return n + ' ' + (n === 1 ? 'box' : 'boxes'); }
-function isLowStock(a) { return a.status === 'Active' && getBoxes(a) <= LOW_STOCK_THRESHOLD; }
+function isLowStock(a) {
+  if (a.status !== 'Active') return false;
+  if (getBoxes(a) > LOW_STOCK_THRESHOLD) return false;
+  // Suppress the flag if a PO has been logged but not yet marked sent —
+  // product is already on the way.
+  const hasUnshippedPO = (a.pos || []).some(po => po.payStatus !== 'paid' && !po.invoiceSentDate);
+  return !hasUnshippedPO;
+}
 function hasOverdueInv(a) { return (a.pos||[]).some(po => po.payStatus !== 'paid' && po.invoiceSentDate && daysSince(po.invoiceSentDate) > 30); }
 function hasUnsentInv(a) { return (a.pos||[]).some(po => po.payStatus !== 'paid' && !po.invoiceSentDate); }
 function nextDue(a) {
@@ -931,9 +939,7 @@ function openCi() {
   } else {
     boxesWrap.style.display = 'block';
     boxesInput.value = getBoxes(a);
-    hint.textContent = a.status === 'Trial'
-      ? 'Ask how many sticks are left, round to nearest box (15+=2, 5-14=1, 0-4=0).'
-      : 'Round to whole boxes.';
+    hint.textContent = 'Whole boxes.';
   }
   configureOutcomeButtons(a.status);
   document.getElementById('ci-outcome-wrap').style.display = 'block';
