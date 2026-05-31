@@ -76,7 +76,7 @@ CREATE TABLE public.purchase_orders (
   pay_status           TEXT NOT NULL DEFAULT 'outstanding'
                        CHECK (pay_status IN ('outstanding','paid')),
   pay_method           TEXT
-                       CHECK (pay_method IN ('Venmo','Zelle','ACH')),
+                       CHECK (pay_method IN ('Venmo','ACH')),
   date_paid            DATE,
   boxes_after_delivery INT CHECK (boxes_after_delivery IS NULL OR boxes_after_delivery >= 0),
   notes                TEXT,
